@@ -1,2 +1,4 @@
-package com.rajawarama.backend.dto;public class ApiResponse {
+package com.rajawarama.backend.dto;
+
+public record ApiResponse(String message) {
 }

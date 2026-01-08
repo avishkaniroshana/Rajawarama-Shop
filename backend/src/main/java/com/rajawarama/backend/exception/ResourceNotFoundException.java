@@ -1,2 +1,7 @@
-package com.rajawarama.backend.exception;public class ResourceNotFoundException {
+package com.rajawarama.backend.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
 }

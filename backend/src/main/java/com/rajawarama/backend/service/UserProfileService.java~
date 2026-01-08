@@ -35,15 +35,8 @@ public class UserProfileService {
 
     public void updateProfile(String email, UpdateProfileRequest request) {
         User user = getUser(email);
-
-        if (request.getFullName() != null) {
-            user.setFullName(request.getFullName());
-        }
-
-        if (request.getPhone() != null) {
-            user.setPhone(request.getPhone());
-        }
-
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
         userRepository.save(user);
     }
 

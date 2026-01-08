@@ -1,0 +1,118 @@
+package com.rajawarama.backend.entity;
+
+import com.rajawarama.backend.enums.Role;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+public class User implements UserDetails {
+
+    @Id
+    @Column(name = "user_id",nullable = false,updatable = false)
+    private UUID userId;
+
+    @Column(name = "email", unique = true, nullable = false)
+    private String email;
+
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Column(name="phone")
+    private String phone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    private LocalDateTime lastLogin;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    // CONSTRUCTORS
+    public User(UUID userId) {
+        this.userId = userId;
+    }
+
+    public User(String email, String fullName, String passwordHash, String phone, Role role) {
+        this.userId = UUID.randomUUID();
+        this.email = email;
+        this.fullName = fullName;
+        this.passwordHash = passwordHash;
+        this.phone = phone;
+        this.role = role;
+    }
+
+
+    public void updateLastLogin() {
+        this.lastLogin = LocalDateTime.now();
+    }
+
+    public void softDelete() {
+        this.isDeleted = true;
+    }
+
+
+    //Spring Security
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE"+role.name()));
+    }
+
+
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return !isDeleted;
+    }
+
+
+
+}

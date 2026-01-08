@@ -1,0 +1,70 @@
+package com.rajawarama.backend.service;
+
+import com.rajawarama.backend.dto.ChangePasswordRequest;
+import com.rajawarama.backend.dto.ProfileResponse;
+import com.rajawarama.backend.dto.UpdateProfileRequest;
+import com.rajawarama.backend.entity.User;
+import com.rajawarama.backend.exception.BadRequestException;
+import com.rajawarama.backend.exception.ResourceNotFoundException;
+import com.rajawarama.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class UserProfileService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    private User getUser(String email) {
+        return userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+    }
+
+    public ProfileResponse getProfile(String email) {
+        User user = getUser(email);
+        return  new ProfileResponse(
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhone(),
+                user.getRole().name(),
+                user.getCreatedAt()
+        );
+    }
+
+    public void updateProfile(String email, UpdateProfileRequest request) {
+        User user = getUser(email);
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
+        userRepository.save(user);
+    }
+
+    public void changePassword(String email, ChangePasswordRequest request){
+        User user = getUser(email);
+
+        if(!passwordEncoder.matches(request.getCurrentPassword(),user.getPasswordHash())){
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        if(!request.getNewPassword().equals(request.getConfirmPassword())){
+            throw new RuntimeException("Passwords do not match!");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("New password cannot be the same as old password");
+        }
+
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+    }
+
+    public void deleteAccount(String email){
+        User user = getUser(email);
+        user.softDelete();
+        userRepository.save(user);
+    }
+
+}

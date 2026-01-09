@@ -20,17 +20,35 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+//    public void register(SignUpRequest request){
+//        if (userRepository.existsByEmail(request.getEmail())) {
+//            throw new RuntimeException("Email already registered!");
+//        }
+//
+//        String hashedPassword = passwordEncoder.encode(request.getPassword());
+//
+//        User user = new User(
+//                request.getEmail(),
+//                request.getFullName(),
+//                hashedPassword,
+//                request.getPhone(),
+//                Role.CUSTOMER
+//        );
+//        userRepository.save(user);
+//
+//    }
+
     public void register(SignUpRequest request) {
 
         userRepository.findByEmail(request.getEmail())
                 .ifPresentOrElse(user -> {
 
-                    // Email exists & account is ACTIVE
+                    // Case 1: Email exists & account is ACTIVE
                     if (!user.isDeleted()) {
                         throw new RuntimeException("Email already registered!");
                     }
 
-                    // Email exists & account is DELETED → Reactivate
+                    // Case 2: Email exists & account is DELETED → Reactivate
                     user.setDeleted(false);
                     user.setFullName(request.getFullName());
                     user.setPhone(request.getPhone());
@@ -41,7 +59,7 @@ public class AuthService {
 
                 }, () -> {
 
-                    // Email does NOT exist → Create new account
+                    // Case 3: Email does NOT exist → Create new account
                     User newUser = new User(
                             request.getEmail(),
                             request.getFullName(),

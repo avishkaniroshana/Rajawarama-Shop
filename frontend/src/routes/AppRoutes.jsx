@@ -8,6 +8,8 @@ import Contact from "../pages/Contact.jsx";
 import SignIn from "../pages/SignIn.jsx";
 import SignUp from "../pages/SignUp.jsx";
 import NotFound from "../pages/NotFound.jsx";
+import Profile from "../pages/Profile.jsx";
+import ProtectedRoute from "./ProtectedRoutes.jsx";
 
 const AppRoutes = () => {
   return (
@@ -19,6 +21,14 @@ const AppRoutes = () => {
       <Route path="/contact" element={<Contact />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/not-found" element={<NotFound />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

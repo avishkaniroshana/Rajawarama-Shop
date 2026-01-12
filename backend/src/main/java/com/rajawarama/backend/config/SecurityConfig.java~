@@ -90,7 +90,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    //Authentication manager
+    //Authentication manager   
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config

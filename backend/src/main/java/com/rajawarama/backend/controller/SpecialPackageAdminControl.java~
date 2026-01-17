@@ -50,7 +50,6 @@ public class SpecialPackageAdminControl {
         );
     }
 
-    //DELETE -> http://localhost:8080/api/admin/special-package/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> delete(@PathVariable UUID id) {
         specialPackageService.delete(id);

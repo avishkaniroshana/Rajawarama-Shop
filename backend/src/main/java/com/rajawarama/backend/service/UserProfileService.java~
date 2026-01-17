@@ -70,7 +70,7 @@ public class UserProfileService {
 
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = getUser(email);
-        
+
         if (!passwordEncoder.matches(
                 request.getCurrentPassword(),
                 user.getPasswordHash()

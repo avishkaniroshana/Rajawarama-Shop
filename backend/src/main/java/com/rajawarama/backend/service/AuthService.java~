@@ -20,35 +20,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-//    public void register(SignUpRequest request){
-//        if (userRepository.existsByEmail(request.getEmail())) {
-//            throw new RuntimeException("Email already registered!");
-//        }
-//
-//        String hashedPassword = passwordEncoder.encode(request.getPassword());
-//
-//        User user = new User(
-//                request.getEmail(),
-//                request.getFullName(),
-//                hashedPassword,
-//                request.getPhone(),
-//                Role.CUSTOMER
-//        );
-//        userRepository.save(user);
-//
-//    }
-
     public void register(SignUpRequest request) {
 
         userRepository.findByEmail(request.getEmail())
                 .ifPresentOrElse(user -> {
 
-                    // Case 1: Email exists & account is ACTIVE
+                    // Email exists & account is ACTIVE
                     if (!user.isDeleted()) {
                         throw new RuntimeException("Email already registered!");
                     }
 
-                    // Case 2: Email exists & account is DELETED → Reactivate
+                    // Email exists & account is DELETED → Reactivate
                     user.setDeleted(false);
                     user.setFullName(request.getFullName());
                     user.setPhone(request.getPhone());
@@ -59,7 +41,7 @@ public class AuthService {
 
                 }, () -> {
 
-                    // Case 3: Email does NOT exist → Create new account
+                    // Email does NOT exist → Create new account
                     User newUser = new User(
                             request.getEmail(),
                             request.getFullName(),
@@ -72,11 +54,11 @@ public class AuthService {
                 });
     }
 
-    public AuthResponse login(LoginRequest request){
+    public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password!"));
 
-        if(!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())){
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Invalid email or password!");
         }
 
@@ -85,7 +67,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
-        return new AuthResponse(token, user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getUserId(), user.getEmail(), user.getRole().name(), user.getFullName());
     }
 
 

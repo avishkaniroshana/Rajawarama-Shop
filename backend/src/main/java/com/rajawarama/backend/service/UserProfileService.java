@@ -46,27 +46,7 @@ public class UserProfileService {
 
         userRepository.save(user);
     }
-
-//    public void changePassword(String email, ChangePasswordRequest request){
-//        User user = getUser(email);
-//
-//        if(!passwordEncoder.matches(request.getCurrentPassword(),user.getPasswordHash())){
-//            throw new BadRequestException("Current password is incorrect");
-//        }
-//
-//        if(!request.getNewPassword().equals(request.getConfirmPassword())){
-//            throw new RuntimeException("Passwords do not match!");
-//        }
-//
-//        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
-//            throw new RuntimeException("New password cannot be the same as old password");
-//        }
-//
-//
-//        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-//        userRepository.save(user);
-//
-//    }
+    
 
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = getUser(email);

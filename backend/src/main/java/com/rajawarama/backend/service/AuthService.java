@@ -54,20 +54,20 @@ public class AuthService {
                 });
     }
 
-    public AuthResponse login(LoginRequest request){
+    public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password!"));
 
-        if(!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())){
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Invalid email or password!");
         }
 
         user.updateLastLogin();
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getUserId().toString());
 
-        return new AuthResponse(token, user.getEmail(), user.getRole().name(), user.getFullName());
+        return new AuthResponse(token, user.getUserId(), user.getEmail(), user.getRole().name(), user.getFullName());
     }
 
 

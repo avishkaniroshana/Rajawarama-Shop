@@ -39,12 +39,8 @@ public class DancingGroupPackage {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    
 
-    public DancingGroupPackage(String name, String details, Double price) {
-        this.id = UUID.randomUUID();
-        this.name = name;
-        this.details = details;
-        this.price = price;
-    }
+
 
 }

@@ -1,0 +1,50 @@
+package com.rajawarama.backend.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "dancing_group_package")
+@Getter
+@Setter
+@NoArgsConstructor
+public class DancingGroupPackage {
+
+    @Id
+    @Column(name = "dancing_package_id", nullable = false, updatable = false)
+    private UUID id;
+
+    @Column(name = "dancing_package_name", nullable = false)
+    private String name;
+
+    @Column(name = "details", columnDefinition = "TEXT")
+    private String details;
+
+    @Column(name = "price", nullable = false)
+    private Double price;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+
+    public DancingGroupPackage(String name, String details, Double price) {
+        this.id = UUID.randomUUID();
+        this.name = name;
+        this.details = details;
+        this.price = price;
+    }
+
+}

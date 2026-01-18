@@ -1,0 +1,62 @@
+package com.rajawarama.backend.controller;
+
+import com.rajawarama.backend.dto.ApiResponse;
+import com.rajawarama.backend.dto.DancingGroupPackageRequest;
+import com.rajawarama.backend.entity.DancingGroupPackage;
+import com.rajawarama.backend.service.DancingGroupPackageService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/admin/dancing-package")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
+public class DancingGroupPackageAdminController {
+
+    private final DancingGroupPackageService dancingGroupPackageService;
+
+
+    //POST -> http://localhost:8080/api/admin/dancing-package
+    @PostMapping
+    public ResponseEntity<ApiResponse> createDancingGroupPackage(
+            @Valid @RequestBody DancingGroupPackageRequest dancingGroupPackageRequest
+            ) {
+        dancingGroupPackageService.createDancingGroupPackage(dancingGroupPackageRequest);
+        return ResponseEntity.ok(new ApiResponse("Dancing group package created successfully"));
+
+    }
+
+
+
+    //GET -> http://localhost:8080/api/admin/dancing-package
+    @GetMapping
+    public List<DancingGroupPackage> getAllDancingGroupPackages() {
+        return dancingGroupPackageService.getAllDancingGroupPackages();
+    }
+
+
+    //PUT -> http://localhost:8080/api/admin/dancing-package/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateDancingGroupPackage(
+            @PathVariable UUID id,
+            @Valid @RequestBody DancingGroupPackageRequest dancingGroupPackageRequest
+    ) {
+        dancingGroupPackageService.updateDancingGroupPackage(id, dancingGroupPackageRequest);
+        return ResponseEntity.ok(new ApiResponse("Dancing group package updated successfully"));
+    }
+
+
+    //DELETE -> http://localhost:8080/api/admin/dancing-package/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deleteDancingGroupPackage(@PathVariable UUID id) {
+        dancingGroupPackageService.deleteDancingGroupPackage(id);
+        return ResponseEntity.ok(new ApiResponse("Dancing group package deleted successfully"));
+    }
+
+}

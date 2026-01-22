@@ -4,13 +4,12 @@ import { isAuthenticated, getUserFullName } from "../utils/auth";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const [user, setUser] = useState({ fullName: "" });
 
   useEffect(() => {
-    const isAuth = isAuthenticated();
-    setLoggedIn(isAuth);
-    if (isAuth) {
+    if (isAuthenticated()) {
+      setLoggedIn(true);
       setUser({ fullName: getUserFullName() });
     }
   }, []);

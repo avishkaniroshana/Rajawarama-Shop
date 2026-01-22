@@ -36,14 +36,25 @@ const SignUp = () => {
 
   const onSubmit = async (data) => {
     try {
-      await api.post("/auth/signup", data);
+      await api.post("/api/auth/signup", data);
       toastSuccess("Registration successful! Please sign in.");
       setTimeout(() => {
         navigate("/signin");
       }, 1200);
-    } catch (err) {
-      toastError(err.response?.data?.message || "Registration failed");
-    }
+    }  catch (err) {
+        const errorData = err.response?.data;
+
+        if (typeof errorData === "string") {
+          toastError(errorData);
+        } else if (errorData?.message) {
+          toastError(errorData.message);
+        } else if (typeof errorData === "object") {
+          toastError(Object.values(errorData)[0]);
+        } else {
+          toastError("Registration failed");
+        }
+  }
+
   };
   return (
     <AuthModalWrapper isOpen={true} onClose={handleClose}>

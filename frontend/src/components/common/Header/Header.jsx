@@ -1,11 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { clearAuth } from "../../../utils/auth";
+import { clearAuth, getUserRole } from "../../../utils/auth";
 import { useAuth } from "../../../context/AuthContext";
 import profileIcon from "../../../assets/images/profile-icon.png";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 const Header = () => {
   const navigate = useNavigate();
-  const { loggedIn, logout } = useAuth();
+  const { loggedIn, logout, user } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     clearAuth();
@@ -41,41 +44,69 @@ const Header = () => {
         </nav>
 
         {/* Right Actions */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-4 relative">
           {!loggedIn ? (
             <>
               <Link
                 to="/signin"
-                className="border px-4 py-2 rounded-lg text-gray-700 hover:border-orange-600"
+                className="border px-4 py-2 rounded-lg text-gray-700 hover:border-orange-600 transition"
               >
                 Sign In
               </Link>
               <Link
                 to="/signup"
-                className="border px-4 py-2 rounded-lg text-gray-700 hover:border-blue-600"
+                className="border px-4 py-2 rounded-lg text-gray-700 hover:border-blue-600 transition"
               >
                 Sign Up
               </Link>
             </>
           ) : (
             <>
-              {/* displaying logged user's user name */}
-              <span className="text-gray-700 font-medium">Welcome,</span>
-              {/* Profile */}
-              <Link to="/profile">
-                <img
-                  src={profileIcon}
-                  alt="Profile"
-                  className="w-9 h-9 rounded-full border cursor-pointer hover:ring-2 hover:ring-blue-500"
-                />
-              </Link>
-              {/* Logout */}
-              <button
-                onClick={handleLogout}
-                className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg shadow hover:bg-red-700 hover:shadow-lg transition duration-200"
-              >
-                Logout
-              </button>
+              {/* Admin Dashboard Button */}
+              {getUserRole() === "ADMIN" && (
+                <Link
+                  to="/admin/dashboard"
+                  className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-2xl shadow-lg hover:from-blue-600 hover:to-blue-800 hover:scale-105 transform transition-all duration-300 font-semibold"
+                >
+                  Dashboard
+                </Link>
+              )}
+
+              {/* Profile & Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:ring-2 hover:ring-blue-500 transition"
+                >
+                  <img
+                    src={profileIcon}
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full border"
+                  />
+                  <span className="hidden md:inline text-gray-700 font-medium">
+                    {user?.fullName || "User"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-700" />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg overflow-hidden z-50">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700 shadow-sm transition duration-200"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

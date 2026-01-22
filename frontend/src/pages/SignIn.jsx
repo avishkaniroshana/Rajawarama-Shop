@@ -11,11 +11,10 @@ const SignIn = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const handleClose = () => {
-    navigate("/"); 
-  }
+    navigate("/");
+  };
   const handleLogin = async (e) => {
     e.preventDefault();
-  
 
     const data = {
       email: e.target.email.value,
@@ -23,12 +22,25 @@ const SignIn = () => {
     };
 
     try {
-      const res = await api.post("/auth/login", data);
-      setAuth(res.data.token, res.data.role, res.data.email);
+      const res = await api.post("/api/auth/login", data);
+      setAuth(res.data.token, res.data.role, res.data.email, res.data.fullName);
       login();
-      navigate("/");
-    } catch {
-      alert("Invalid email or password");
+
+      setTimeout(() => {
+        if (res.data.role === "ADMIN") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 100);
+
+    } catch (err) {
+      console.error("Request failed:", {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
+      toastError(err.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -129,4 +141,3 @@ const SignIn = () => {
 };
 
 export default SignIn;
-

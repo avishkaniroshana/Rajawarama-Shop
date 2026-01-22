@@ -1,15 +1,20 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Home from "../pages/Home.jsx";
-import Services from "../pages/Services.jsx";
-import Packages from "../pages/Packages.jsx";
-import Booking from "../pages/Booking.jsx";
-import Contact from "../pages/Contact.jsx";
-import SignIn from "../pages/SignIn.jsx";
-import SignUp from "../pages/SignUp.jsx";
-import NotFound from "../pages/NotFound.jsx";
-import Profile from "../pages/Profile.jsx";
-import ProtectedRoute from "./ProtectedRoutes.jsx";
+import Home from "../pages/Home";
+import Services from "../pages/Services";
+import Packages from "../pages/Packages";
+import Booking from "../pages/Booking";
+import Contact from "../pages/Contact";
+import SignIn from "../pages/SignIn";
+import SignUp from "../pages/SignUp";
+import Profile from "../pages/Profile";
+import NotFound from "../pages/NotFound";
+
+import ProtectedRoute from "./ProtectedRoutes";
+import AdminProtectedRoute from "./AdminProtectedRoute";
+
+import AdminDashboard from "../pages/AdminDashboard";
+import SpecialPackageManager from "../components/admin/SpecialPackageManager";
+import DancingPackageManager from "../components/admin/DancingPackageManager";
 
 const AppRoutes = () => {
   return (
@@ -21,6 +26,7 @@ const AppRoutes = () => {
       <Route path="/contact" element={<Contact />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+
       <Route
         path="/profile"
         element={
@@ -29,7 +35,33 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route path="/not-found" element={<NotFound />} />
+
+      {/* ADMIN */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminProtectedRoute>
+            <AdminDashboard />
+          </AdminProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/special-packages"
+        element={
+          <AdminProtectedRoute>
+            <SpecialPackageManager />
+          </AdminProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dancing-packages"
+        element={
+          <AdminProtectedRoute>
+            <DancingPackageManager />
+          </AdminProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

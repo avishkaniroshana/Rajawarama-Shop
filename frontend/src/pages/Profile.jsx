@@ -61,10 +61,10 @@ const Profile = () => {
   /* ===== FETCH PROFILE ===== */
   const fetchProfile = async () => {
     try {
-      const res = await api.get("/profile");
+      const res = await api.get("/api/profile");
       setUser(res.data);
       reset(res.data);
-    } catch {
+    } catch (err) {
       toastError("Session expired. Please sign in again.");
       clearAuth();
       window.location.href = "/signin";
@@ -73,6 +73,7 @@ const Profile = () => {
     }
   };
 
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -80,7 +81,7 @@ const Profile = () => {
   /* ===== UPDATE PROFILE ===== */
   const onSubmitProfile = async (data) => {
     try {
-      await api.put("/profile", data);
+      await api.put("/api/profile", data);
       toastSuccess("Profile updated successfully");
       setIsEditing(false);
       fetchProfile();
@@ -92,7 +93,7 @@ const Profile = () => {
   /* ===== CHANGE PASSWORD ===== */
   const onSubmitPassword = async (data) => {
     try {
-      await api.put("/profile/password", {
+      await api.put("/api/profile/password", {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
         confirmPassword: data.confirmPassword,
@@ -108,7 +109,7 @@ const Profile = () => {
   /* ===== DELETE ACCOUNT ===== */
   const handleDeleteAccount = async () => {
     try {
-      await api.delete("/profile");
+      await api.delete("/api/profile");
 
       toastSuccess("Account deleted successfully");
 

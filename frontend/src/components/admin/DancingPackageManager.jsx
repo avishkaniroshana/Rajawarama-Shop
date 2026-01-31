@@ -10,14 +10,17 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
-// Validation schema using zod
+
 const dancingPackageSchema = z.object({
-  name: z.string().require("Package name is required!"),
-  details: z.string().require("Package details are required!"),
+  name: z.string().min(1, "Package name is required!"),
+
+  details: z.string().min(1, "Package details are required!"),
+
   price: z
     .number({ invalid_type_error: "Price is required" })
     .positive("Price must be greater than 0"),
 });
+
 
 const DancingPackageManager = () => {
   const [packages, setPackages] = useState([]);

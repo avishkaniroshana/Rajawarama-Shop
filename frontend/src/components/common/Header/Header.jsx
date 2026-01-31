@@ -62,16 +62,6 @@ const Header = () => {
             </>
           ) : (
             <>
-              {/* Admin Dashboard Button */}
-              {getUserRole() === "ADMIN" && (
-                <Link
-                  to="/admin/dashboard"
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-2xl shadow-lg hover:from-blue-600 hover:to-blue-800 hover:scale-105 transform transition-all duration-300 font-semibold"
-                >
-                  Dashboard
-                </Link>
-              )}
-
               {/* Profile & Dropdown */}
               <div className="relative">
                 <button
@@ -98,6 +88,21 @@ const Header = () => {
                     >
                       Profile
                     </Link>
+
+                    {/* Admin Dashbords for only Admin */}
+                    {getUserRole() === "ADMIN" && (
+                      <Link
+                        to="/admin/dashboard"
+                        className="block px-4 py-2 text-blue-700 font-medium hover:bg-blue-50"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+
+                    {/* Divider */}
+                    <div className="border-t" />
+
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700 shadow-sm transition duration-200"

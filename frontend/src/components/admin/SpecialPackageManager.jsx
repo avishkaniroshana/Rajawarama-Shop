@@ -11,17 +11,22 @@ import withReactContent from "sweetalert2-react-content";
 const MySwal = withReactContent(Swal);
 
 const specialPackageSchema = z.object({
-  name: z.string().require("Package name is required!"),
-  description: z.string().require("Description is required!"),
+  name: z.string().min(1, "Package name is required!"),
+
+  description: z.string().min(1, "Description is required!"),
+
   freeOfChargeItems: z.string().optional(),
+
   price: z
-    .number({ invalid_type_error: "Price is required" })
-    .positive("Price must be greater than 0"),
+    .number({ invalid_type_error: "Price is required in numbers!" })
+    .positive("Price must be greater than 0!"),
+
   discountPercentage: z
-    .number({ invalid_type_error: "Discount is required!" })
+    .number({ invalid_type_error: "Discount is required in numbers!" })
     .min(0, "Discount cannot be negative!")
     .max(100, "Discount cannot exceed 100!"),
 });
+
 
 const SpecialPackageManager = () => {
   const [packages, setPackages] = useState([]);

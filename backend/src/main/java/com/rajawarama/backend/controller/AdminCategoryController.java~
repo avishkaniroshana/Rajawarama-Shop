@@ -21,24 +21,24 @@ public class AdminCategoryController {
 
     private final CategoryService categoryService;
 
-    // ================= CREATE CATEGORY =================
-    // POST http://localhost:8080/api/admin/categories
+
+
+    //localhost:8080/api/admin/categories
     @PostMapping
     public ResponseEntity<CategoryResponse> create(
-            @Valid @RequestBody CreateCategoryRequest request
+            @Valid @RequestBody CreateCategoryRequest  request
     ) {
         return ResponseEntity.ok(categoryService.create(request));
     }
 
-    // ================= GET ALL CATEGORIES =================
-    // GET http://localhost:8080/api/admin/categories
+
+    //localhost:8080/api/admin/categories
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAll() {
         return ResponseEntity.ok(categoryService.getAll());
     }
 
-    // ================= UPDATE CATEGORY =================
-    // PUT http://localhost:8080/api/admin/categories/{categoryId}
+
     @PutMapping("/{categoryId}")
     public ResponseEntity<CategoryResponse> update(
             @PathVariable UUID categoryId,
@@ -47,13 +47,16 @@ public class AdminCategoryController {
         return ResponseEntity.ok(categoryService.update(categoryId, request));
     }
 
-    // ================= DELETE CATEGORY =================
-    // DELETE http://localhost:8080/api/admin/categories/{categoryId}
     @DeleteMapping("/{categoryId}")
     public ResponseEntity<?> delete(@PathVariable UUID categoryId) {
         categoryService.delete(categoryId);
-        return ResponseEntity.ok(
+        return ResponseEntity.ok().body(
                 java.util.Map.of("message", "Category deleted successfully")
         );
     }
+
+
+
+
+
 }

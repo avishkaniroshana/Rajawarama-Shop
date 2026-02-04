@@ -30,6 +30,22 @@ public class AdminUserService {
     }
 
     // ADMIN Creates users
+//    public UserResponse createUser(CreateUserRequest request) {
+//
+//        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+//            throw new BadRequestException("Email already exists!");
+//        }
+//
+//        User user = new User(
+//                request.getEmail(),
+//                request.getFullName(),
+//                passwordEncoder.encode(request.getPassword()),
+//                request.getPhone(),
+//                request.getRole()
+//        );
+//
+//        return mapToResponse(userRepository.save(user));
+//    }
 
     public UserResponse createUser(CreateUserRequest request) {
 
@@ -37,11 +53,12 @@ public class AdminUserService {
                 .findByEmail(request.getEmail())
                 .orElse(null);
 
+        // ❌ Email exists & ACTIVE
         if (existingUser != null && !existingUser.isDeleted()) {
             throw new BadRequestException("Email already exists!");
         }
 
-        // if Email exists & SOFT-DELETED → RESTORE
+        // ♻️ Email exists & SOFT-DELETED → RESTORE
         if (existingUser != null && existingUser.isDeleted()) {
 
             existingUser.setFullName(request.getFullName());
@@ -55,7 +72,7 @@ public class AdminUserService {
             return mapToResponse(userRepository.save(existingUser));
         }
 
-        // Email does NOT exist → CREATE NEW USER
+        // 🆕 Email does NOT exist → CREATE NEW USER
         User newUser = new User(
                 request.getEmail(),
                 request.getFullName(),

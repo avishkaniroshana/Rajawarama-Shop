@@ -33,15 +33,6 @@ public class AdminUserController {
         return adminUserService.createUser(request);
     }
 
-
-
-    
-    //fix re for creating soft deleted user
-
-
-
-
-
     @PutMapping("/{userId}")
     public UserResponse updateUser(
             @PathVariable UUID userId,

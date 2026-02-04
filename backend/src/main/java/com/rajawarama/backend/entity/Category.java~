@@ -36,10 +36,6 @@ public class Category {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    public Category(String name, String description) {
-        this.categoryId = UUID.randomUUID();
-        this.name = name;
-        this.description = description;
-    }
+    
 
 }

@@ -1,0 +1,111 @@
+package com.rajawarama.backend.service;
+
+import com.rajawarama.backend.dto.CreateUserRequest;
+import com.rajawarama.backend.dto.UpdateUserRequest;
+import com.rajawarama.backend.dto.UserResponse;
+import com.rajawarama.backend.entity.User;
+import com.rajawarama.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import com.rajawarama.backend.exception.BadRequestException;
+
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class AdminUserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    // ADMIN Views all users
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // ADMIN Creates users
+
+    public UserResponse createUser(CreateUserRequest request) {
+
+        User existingUser = userRepository
+                .findByEmail(request.getEmail())
+                .orElse(null);
+
+        if (existingUser != null && !existingUser.isDeleted()) {
+            throw new BadRequestException("Email already exists!");
+        }
+
+        // if Email exists & SOFT-DELETED → RESTORE
+        if (existingUser != null && existingUser.isDeleted()) {
+
+            existingUser.setFullName(request.getFullName());
+            existingUser.setPhone(request.getPhone());
+            existingUser.setRole(request.getRole());
+            existingUser.setDeleted(false);
+            existingUser.setPasswordHash(
+                    passwordEncoder.encode(request.getPassword())
+            );
+
+            return mapToResponse(userRepository.save(existingUser));
+        }
+
+        // Email does NOT exist → CREATE NEW USER
+        User newUser = new User(
+                request.getEmail(),
+                request.getFullName(),
+                passwordEncoder.encode(request.getPassword()),
+                request.getPhone(),
+                request.getRole()
+        );
+
+        return mapToResponse(userRepository.save(newUser));
+    }
+
+
+    // ADMIN Updates users
+    public UserResponse updateUser(UUID userId, UpdateUserRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
+        user.setRole(request.getRole());
+
+        return mapToResponse(userRepository.save(user));
+    }
+
+    // ADMIN performs Soft delete on users
+    public void softDeleteUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.softDelete();
+
+        userRepository.save(user);
+    }
+
+    // ADMIN performs Hard delete
+    public void hardDeleteUser(UUID userId) {
+        userRepository.deleteById(userId);
+    }
+
+    private UserResponse mapToResponse(User user) {
+        return UserResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .role(user.getRole())
+                .isDeleted(user.isDeleted())
+                .createdAt(user.getCreatedAt())
+                .lastLogin(user.getLastLogin())
+                .build();
+    }
+}

@@ -89,7 +89,7 @@ const Header = () => {
                       Profile
                     </Link>
 
-                    {/* Admin Dashbords for only Admin */}
+                    {/* Admin Dashbords for only Admin  */}
                     {getUserRole() === "ADMIN" && (
                       <Link
                         to="/admin/dashboard"

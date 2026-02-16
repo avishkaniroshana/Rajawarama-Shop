@@ -1,0 +1,77 @@
+package com.rajawarama.backend.controller;
+
+import com.rajawarama.backend.dto.DressItemResponse;
+import com.rajawarama.backend.service.DressItemService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/admin/dress-items")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminDressItemController {
+
+    private final DressItemService dressItemService;
+
+    //Create dress item
+    //POST->localhost:8080/api/admin/dress-items
+    @PostMapping
+    public ResponseEntity<DressItemResponse> create(
+            @RequestParam String dressName,
+            @RequestParam UUID categoryId,
+            @RequestParam MultipartFile image
+    ) {
+        return ResponseEntity.ok(
+                dressItemService.create(dressName, categoryId, image)
+        );
+    }
+
+    //Update dress item
+    //PUT->localhost:8080/api/admin/dress-items
+    @PutMapping("/{dressItemId}")
+    public ResponseEntity<DressItemResponse> update(
+            @PathVariable UUID dressItemId,
+            @RequestParam String dressName,
+            @RequestParam UUID categoryId,
+            @RequestParam(required = false) MultipartFile image
+    ) {
+        return ResponseEntity.ok(
+                dressItemService.update(dressItemId, dressName, categoryId, image)
+        );
+    }
+
+    //Get all dress items
+    //GET->localhost:8080/api/admin/dress-items
+    @GetMapping
+    public ResponseEntity<List<DressItemResponse>> getAll() {
+        return ResponseEntity.ok(dressItemService.getAll());
+    }
+
+    //Get dress item by id
+    //GET->localhost:8080/api/admin/dress-items
+    @GetMapping("/{dressItemId}")
+    public ResponseEntity<DressItemResponse> getById(
+            @PathVariable UUID dressItemId
+    ) {
+        return ResponseEntity.ok(
+                dressItemService.getById(dressItemId)
+        );
+    }
+
+    //DELETE dress item
+    @DeleteMapping("/{dressItemId}")
+    public ResponseEntity<?> delete(@PathVariable UUID dressItemId) {
+        dressItemService.delete(dressItemId);
+
+        return ResponseEntity.ok(
+                Map.of("message", "Dress item deleted successfully")
+        );
+    }
+}

@@ -16,7 +16,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 public class DressItem {
-
+    
     @Id
     @Column(name = "dress_item_id", nullable = false, updatable = false)
     private UUID dressItemId;

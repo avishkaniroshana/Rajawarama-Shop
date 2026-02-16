@@ -20,8 +20,9 @@ public class AdminDressItemController {
 
     private final DressItemService dressItemService;
 
-    //Create dress item
-    //POST->localhost:8080/api/admin/dress-items
+    // ==============================
+    // CREATE
+    // ==============================
     @PostMapping
     public ResponseEntity<DressItemResponse> create(
             @RequestParam String dressName,
@@ -33,8 +34,9 @@ public class AdminDressItemController {
         );
     }
 
-    //Update dress item
-    //PUT->localhost:8080/api/admin/dress-items
+    // ==============================
+    // UPDATE
+    // ==============================
     @PutMapping("/{dressItemId}")
     public ResponseEntity<DressItemResponse> update(
             @PathVariable UUID dressItemId,
@@ -47,15 +49,17 @@ public class AdminDressItemController {
         );
     }
 
-    //Get all dress items
-    //GET->localhost:8080/api/admin/dress-items
+    // ==============================
+    // GET ALL
+    // ==============================
     @GetMapping
     public ResponseEntity<List<DressItemResponse>> getAll() {
         return ResponseEntity.ok(dressItemService.getAll());
     }
 
-    //Get dress item by id
-    //GET->localhost:8080/api/admin/dress-items
+    // ==============================
+    // GET BY ID
+    // ==============================
     @GetMapping("/{dressItemId}")
     public ResponseEntity<DressItemResponse> getById(
             @PathVariable UUID dressItemId
@@ -65,7 +69,9 @@ public class AdminDressItemController {
         );
     }
 
-    //DELETE dress item
+    // ==============================
+    // DELETE
+    // ==============================
     @DeleteMapping("/{dressItemId}")
     public ResponseEntity<?> delete(@PathVariable UUID dressItemId) {
         dressItemService.delete(dressItemId);

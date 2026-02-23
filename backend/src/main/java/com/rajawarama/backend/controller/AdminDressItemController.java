@@ -1,7 +1,9 @@
 package com.rajawarama.backend.controller;
 
+import com.rajawarama.backend.dto.CreateDressItemRequest;
 import com.rajawarama.backend.dto.DressItemResponse;
 import com.rajawarama.backend.service.DressItemService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,58 +22,46 @@ public class AdminDressItemController {
 
     private final DressItemService dressItemService;
 
-    //Create dress item
-    //POST->localhost:8080/api/admin/dress-items
-    @PostMapping
+    // CREATE - Multipart form (text fields + file)
+    //POST->http://localhost:8080/api/admin/dress-items
+    @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<DressItemResponse> create(
-            @RequestParam String dressName,
-            @RequestParam UUID categoryId,
-            @RequestParam MultipartFile image
+            @Valid @RequestPart("request") CreateDressItemRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        return ResponseEntity.ok(
-                dressItemService.create(dressName, categoryId, image)
-        );
+        return ResponseEntity.ok(dressItemService.create(request, image));
     }
 
-    //Update dress item
-    //PUT->localhost:8080/api/admin/dress-items
-    @PutMapping("/{dressItemId}")
+    // UPDATE - Multipart form
+    //PUT->http://localhost:8080/api/admin/dress-items/{dress-item-id}
+    @PutMapping(value = "/{dressItemId}", consumes = {"multipart/form-data"})
     public ResponseEntity<DressItemResponse> update(
             @PathVariable UUID dressItemId,
-            @RequestParam String dressName,
-            @RequestParam UUID categoryId,
-            @RequestParam(required = false) MultipartFile image
+            @Valid @RequestPart("request") CreateDressItemRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        return ResponseEntity.ok(
-                dressItemService.update(dressItemId, dressName, categoryId, image)
-        );
+        return ResponseEntity.ok(dressItemService.update(dressItemId, request, image));
     }
 
-    //Get all dress items
-    //GET->localhost:8080/api/admin/dress-items
+    // GET ALL
+    //GET->http://localhost:8080/api/admin/dress-items
     @GetMapping
     public ResponseEntity<List<DressItemResponse>> getAll() {
         return ResponseEntity.ok(dressItemService.getAll());
     }
 
-    //Get dress item by id
-    //GET->localhost:8080/api/admin/dress-items
+    // GET BY ID
+    //GET->http://localhost:8080/api/admin/dress-items/{dress-item-id}
     @GetMapping("/{dressItemId}")
-    public ResponseEntity<DressItemResponse> getById(
-            @PathVariable UUID dressItemId
-    ) {
-        return ResponseEntity.ok(
-                dressItemService.getById(dressItemId)
-        );
+    public ResponseEntity<DressItemResponse> getById(@PathVariable UUID dressItemId) {
+        return ResponseEntity.ok(dressItemService.getById(dressItemId));
     }
 
-    //DELETE dress item
+    // DELETE
+    //DELETE->http://localhost:8080/api/admin/dress-items
     @DeleteMapping("/{dressItemId}")
     public ResponseEntity<?> delete(@PathVariable UUID dressItemId) {
         dressItemService.delete(dressItemId);
-
-        return ResponseEntity.ok(
-                Map.of("message", "Dress item deleted successfully")
-        );
+        return ResponseEntity.ok(Map.of("message", "Dress item deleted successfully"));
     }
 }

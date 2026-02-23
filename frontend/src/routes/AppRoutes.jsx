@@ -15,6 +15,10 @@ import AdminProtectedRoute from "./AdminProtectedRoute";
 import AdminDashboard from "../pages/AdminDashboard";
 import SpecialPackageManager from "../components/admin/SpecialPackageManager";
 import DancingPackageManager from "../components/admin/DancingPackageManager";
+import UserManager from "../components/admin/UserManager";
+import CategoryManager from "../components/admin/CategoryManager";
+import DressItemsManager from "../components/admin/DressItemsManager";
+
 
 const AppRoutes = () => {
   return (
@@ -58,6 +62,33 @@ const AppRoutes = () => {
         element={
           <AdminProtectedRoute>
             <DancingPackageManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <AdminProtectedRoute>
+            <UserManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/categories"
+        element={
+          <AdminProtectedRoute>
+            <CategoryManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/dress-items"
+        element={
+          <AdminProtectedRoute>
+            <DressItemsManager />
           </AdminProtectedRoute>
         }
       />

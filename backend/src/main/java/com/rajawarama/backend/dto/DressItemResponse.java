@@ -16,13 +16,11 @@ public class DressItemResponse {
 
     private String description;
 
-    // This will contain full URL like below url
-    // http://localhost:8080/api/images/abc123.png
-    private String imagePath;
-
     private Integer quantityAdult;
 
     private Integer quantityPageBoys;
+
+    private String imagePath;
 
     private UUID categoryId;
 

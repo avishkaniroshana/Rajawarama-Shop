@@ -1,25 +1,25 @@
 export const setAuth = (token, role, email, fullName) => {
-  localStorage.setItem("token", token);
-  localStorage.setItem("role", role);
-  localStorage.setItem("email", email);
-  localStorage.setItem("fullName", fullName);
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem("role", role);
+    sessionStorage.setItem("email", email);
+    sessionStorage.setItem("fullName", fullName);
 };
 
 export const clearAuth = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-  localStorage.removeItem("email");
-  localStorage.removeItem("fullName");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("email");
+    sessionStorage.removeItem("fullName");
 };
 
 export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
+    return !!sessionStorage.getItem("token");
 };
 
 export const getUserRole = () => {
-  return localStorage.getItem("role");
+    return sessionStorage.getItem("role");
 };
 
 export const getUserFullName = () => {
-  return localStorage.getItem("fullName");
+    return sessionStorage.getItem("fullName");
 };

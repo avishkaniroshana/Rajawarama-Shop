@@ -1,31 +1,45 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { isAuthenticated, getUserFullName } from "../utils/auth";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { clearAuth } from "../utils/auth";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [loggedIn, setLoggedIn] = useState(isAuthenticated());
-  const [user, setUser] = useState({ fullName: "" });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem("accessToken");
+    const role = localStorage.getItem("role");
+    if (token) {
+      setIsLoggedIn(true);
+      setUserRole(role);
+    } else {
+      setIsLoggedIn(false);
+      setUserRole(null);
+    }
+  };
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      setLoggedIn(true);
-      setUser({ fullName: getUserFullName() });
-    }
+    checkAuth(); // Initial check
+
+    // Listen for storage changes (from other tabs or refresh)
+    const handleStorageChange = () => checkAuth();
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const login = () => {
-    setLoggedIn(true);
-    setUser({ fullName: getUserFullName() });
+    checkAuth(); // re-check after setAuth
   };
 
   const logout = () => {
-    setLoggedIn(false);
-    setUser({ fullName: "" });
+    clearAuth();
+    setIsLoggedIn(false);
+    setUserRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ loggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, userRole, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

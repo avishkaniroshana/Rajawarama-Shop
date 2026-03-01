@@ -1,11 +1,12 @@
 import { Navigate } from "react-router-dom";
-import { isAuthenticated, getUserRole } from "../utils/auth";
+import { useAuth } from "../context/AuthContext";
 
 const AdminProtectedRoute = ({ children }) => {
-  const isAuth = isAuthenticated();
-  const role = getUserRole();
+  const { isLoggedIn, userRole } = useAuth();
 
-  if (!isAuth || role !== "ADMIN") {
+  console.log("AdminProtectedRoute check:", { isLoggedIn, userRole });
+
+  if (!isLoggedIn || userRole !== "ADMIN") {
     return <Navigate to="/signin" replace />;
   }
 

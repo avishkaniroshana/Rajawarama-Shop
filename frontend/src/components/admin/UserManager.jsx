@@ -176,10 +176,10 @@ const UserManager = () => {
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/users/hard/${userId}`);
-        toastSuccess("User permanently deleted");
+        toastSuccess("User Permanently Deleted");
         await fetchUsers();
       } catch (err) {
-        toastError("Hard delete failed");
+        toastError("User Delete Failed!");
       }
     }
   };

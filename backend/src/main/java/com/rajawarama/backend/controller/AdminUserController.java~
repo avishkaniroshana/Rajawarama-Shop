@@ -6,6 +6,7 @@ import com.rajawarama.backend.dto.UserResponse;
 import com.rajawarama.backend.service.AdminUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ public class AdminUserController {
         return adminUserService.createUser(request);
     }
 
+    //fix re for creating soft deleted user
     @PutMapping("/{userId}")
     public UserResponse updateUser(
             @PathVariable UUID userId,
@@ -51,14 +53,28 @@ public class AdminUserController {
         return ResponseEntity.ok(response);
     }
 
+//    @DeleteMapping("/hard/{userId}")
+//    public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID userId) {
+//        adminUserService.hardDeleteUser(userId);
+//
+//        Map<String, String> response = new HashMap<>();
+//        response.put("message", "User permanently deleted successfully");
+//
+//        return ResponseEntity.ok(response);
+//    }
+
     @DeleteMapping("/hard/{userId}")
     public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID userId) {
-        adminUserService.hardDeleteUser(userId);
+        try {
+            adminUserService.hardDeleteUser(userId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "User permanently deleted successfully");
-
-        return ResponseEntity.ok(response);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "User permanently deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Failed to permanently delete user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
-
 }

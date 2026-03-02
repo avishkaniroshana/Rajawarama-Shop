@@ -57,7 +57,7 @@ const SignIn = () => {
 
       // Update context
       login();
-      toastSuccess("Login successful!");
+      toastSuccess("Login Successful");
 
       // Header to immediately re-check storage and update navbar
       window.dispatchEvent(new Event("auth-change"));

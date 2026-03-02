@@ -4,7 +4,9 @@ import com.rajawarama.backend.dto.CreateUserRequest;
 import com.rajawarama.backend.dto.UpdateUserRequest;
 import com.rajawarama.backend.dto.UserResponse;
 import com.rajawarama.backend.entity.User;
+import com.rajawarama.backend.repository.RefreshTokenRepository;
 import com.rajawarama.backend.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // ADMIN Views all users
     public List<UserResponse> getAllUsers() {
@@ -91,10 +94,22 @@ public class AdminUserService {
         userRepository.save(user);
     }
 
-    // ADMIN performs Hard delete
+    // ADMIN performs Hard delete on users with associated RefreshTokens
+    @Transactional
     public void hardDeleteUser(UUID userId) {
-        userRepository.deleteById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Delete associated RefreshToken first (this was causing the constraint error)
+        refreshTokenRepository.findByUser(user)
+                .ifPresent(refreshTokenRepository::delete);
+
+        // Safely delete the user
+        userRepository.delete(user);
     }
+
+
+
 
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()

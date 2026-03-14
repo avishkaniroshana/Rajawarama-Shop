@@ -4,13 +4,23 @@ import { clearAuth } from "../utils/auth";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState(null);
+  // Read from localStorage SYNCHRONOUSLY on first render
+  const storedToken = localStorage.getItem("accessToken");
+  const storedRole = localStorage.getItem("role");
+
+  const initialLoggedIn = !!storedToken;
+  const initialRole = storedRole ? storedRole.toUpperCase() : null;
+
+  const [isLoggedIn, setIsLoggedIn] = useState(initialLoggedIn);
+  const [userRole, setUserRole] = useState(initialRole);
 
   const checkAuth = () => {
     const token = localStorage.getItem("accessToken");
-    const role = localStorage.getItem("role");
-    if (token) {
+    let role = localStorage.getItem("role");
+
+    if (token && role) {
+      role = role.toUpperCase();
+      localStorage.setItem("role", role); // normalize once
       setIsLoggedIn(true);
       setUserRole(role);
     } else {
@@ -20,16 +30,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    checkAuth(); // Initial check
+    checkAuth(); // Still run once on mount (in case storage changed externally)
 
-    // Listen for storage changes (from other tabs or refresh)
     const handleStorageChange = () => checkAuth();
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const login = () => {
-    checkAuth(); // re-check after setAuth
+    checkAuth();
   };
 
   const logout = () => {

@@ -1,0 +1,81 @@
+//package com.rajawarama.backend.entity;
+//
+//import com.rajawarama.backend.enums.RequestStatus;
+//import jakarta.persistence.*;
+//import lombok.Getter;
+//import lombok.NoArgsConstructor;
+//import lombok.Setter;
+//import org.hibernate.annotations.CreationTimestamp;
+//import org.hibernate.annotations.UpdateTimestamp;
+//
+//import java.time.LocalDate;
+//import java.time.LocalDateTime;
+//import java.time.LocalTime;
+//import java.util.UUID;
+//
+//@Entity
+//@Table(name = "request_special_packages")
+//@Getter
+//@Setter
+//@NoArgsConstructor
+//public class RequestSpecialPackage {
+//    @Id
+//    @GeneratedValue
+//    @Column(name = "sp_request_id")
+//    private UUID requestId;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "user_id", nullable = false)
+//    private User user;  // who made the request
+//
+//    @Column(name = "hotel_name", nullable = false)
+//    private String hotelName;
+//
+//    @Column(name = "nearest_city", nullable = false)
+//    private String nearestCity;
+//
+//    @Column(name = "event_date", nullable = false)
+//    private LocalDate eventDate;
+//
+//    @Column(name = "contact_no", nullable = false)
+//    private String contactNo;  // can be changed by user
+//
+//    // Dress Item – assuming you have DressItem entity
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "dress_item_id")
+//    private DressItem dressItem;
+//
+//    // Dancing Package – assuming DancingPackage entity exists
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "dancing_package_id")
+//    private DancingGroupPackage dancingPackage;
+//
+//    @Column(name = "groom_arrival_time")
+//    private LocalTime groomArrivalTime;
+//
+//    @Column(name = "poruwa_start_time")
+//    private LocalTime poruwaStartTime;
+//
+//    @Column(name = "special_notes", columnDefinition = "TEXT")
+//    private String specialNotes;
+//
+//    @Enumerated(EnumType.STRING)
+//    @Column(nullable = false)
+//    private RequestStatus status = RequestStatus.PENDING;
+//
+//    @Column(name = "transport_price")
+//    private Double transportPrice;  // set by admin
+//
+//    @Column(name = "final_price_accepted")
+//    private boolean finalPriceAccepted = false;  // customer accepted price
+//
+//    @CreationTimestamp
+//    @Column(name = "created_at", updatable = false)
+//    private LocalDateTime createdAt;
+//
+//    @UpdateTimestamp
+//    @Column(name = "updated_at")
+//    private LocalDateTime updatedAt;
+//
+//
+//}

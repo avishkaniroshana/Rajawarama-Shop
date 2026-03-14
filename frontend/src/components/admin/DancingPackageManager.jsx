@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { toastSuccess, toastError } from "../../utils/toast";
-import { Edit2, Trash2, Plus, X, Loader2 } from "lucide-react";
+import { Edit2, Trash2, Plus, X, Loader2, Minus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,14 +12,13 @@ const MySwal = withReactContent(Swal);
 
 const dancingPackageSchema = z.object({
   name: z.string().min(1, "Package name is required!"),
-  details: z.string().min(1, "Package details are required!"),
-  price: z
-    .number({ invalid_type_error: "Price is required" })
-    .positive("Price must be greater than 0"),
+  details: z.string().optional(),
 });
 
 const DancingPackageManager = () => {
   const [packages, setPackages] = useState([]);
+  const [performerTypes, setPerformerTypes] = useState([]);
+  const [selectedPerformers, setSelectedPerformers] = useState({}); // id → quantity
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,18 +29,19 @@ const DancingPackageManager = () => {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(dancingPackageSchema),
     defaultValues: {
       name: "",
       details: "",
-      price: 0,
     },
   });
 
   useEffect(() => {
     fetchPackages();
+    fetchPerformerTypes();
   }, []);
 
   const fetchPackages = async () => {
@@ -49,8 +49,16 @@ const DancingPackageManager = () => {
       const res = await api.get("/api/admin/dancing-package");
       setPackages(res.data || []);
     } catch (err) {
-      console.error("Failed to load dancing packages:", err);
       toastError("Failed to load dancing packages");
+    }
+  };
+
+  const fetchPerformerTypes = async () => {
+    try {
+      const res = await api.get("/api/admin/dancing-performer-types");
+      setPerformerTypes(res.data || []);
+    } catch (err) {
+      toastError("Failed to load performer types");
     }
   };
 
@@ -59,29 +67,76 @@ const DancingPackageManager = () => {
       setEditingPackage(pkg);
       setValue("name", pkg.name || "");
       setValue("details", pkg.details || "");
-      setValue("price", pkg.price || 0);
+
+      // Pre-fill selected performers from existing package
+      const initial = {};
+      pkg.includedPerformers?.forEach((p) => {
+        initial[p.id] = p.quantity || 1;
+      });
+      setSelectedPerformers(initial);
     } else {
       setEditingPackage(null);
       reset();
+      setSelectedPerformers({});
     }
     setModalOpen(true);
+  };
+
+  const togglePerformer = (id) => {
+    setSelectedPerformers((prev) => {
+      if (prev[id]) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: 1 };
+    });
+  };
+
+  const changeQuantity = (id, delta) => {
+    setSelectedPerformers((prev) => {
+      const current = prev[id] || 0;
+      const newQty = Math.max(0, current + delta);
+      if (newQty === 0) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: newQty };
+    });
   };
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      if (editingPackage) {
-        await api.put(`/api/admin/dancing-package/${editingPackage.id}`, data);
-        toastSuccess("Dancing package updated successfully");
-      } else {
-        await api.post("/api/admin/dancing-package", data);
-        toastSuccess("Dancing package created successfully");
+      const performers = Object.entries(selectedPerformers)
+        .filter(([_, qty]) => qty > 0)
+        .map(([id, quantity]) => ({
+          performerTypeId: id,
+          quantity,
+        }));
+
+      if (performers.length === 0) {
+        toastError("Please select at least one performer");
+        return;
       }
+
+      const payload = {
+        name: data.name,
+        performers,
+      };
+
+      if (editingPackage) {
+        await api.put(`/api/admin/dancing-package/${editingPackage.id}`, payload);
+        toastSuccess("Package updated successfully");
+      } else {
+        await api.post("/api/admin/dancing-package", payload);
+        toastSuccess("Package created successfully");
+      }
+
       setModalOpen(false);
+      setSelectedPerformers({});
       fetchPackages();
     } catch (err) {
-      console.error("Operation failed:", err);
-      toastError(err.response?.data?.message || "Operation failed");
+      toastError(err.response?.data?.message || "Failed to save package");
     } finally {
       setLoading(false);
     }
@@ -96,17 +151,14 @@ const DancingPackageManager = () => {
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
     });
 
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/dancing-package/${id}`);
-        toastSuccess("Dancing package deleted successfully!");
+        toastSuccess("Package deleted");
         fetchPackages();
       } catch (err) {
-        console.error("Delete failed:", err);
         toastError("Failed to delete package");
       }
     }
@@ -114,6 +166,15 @@ const DancingPackageManager = () => {
 
   const toggleIdVisibility = (id) => {
     setVisibleIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const selectedCount = Object.keys(selectedPerformers).length;
+
+  const calculatePreviewTotal = () => {
+    return Object.entries(selectedPerformers).reduce((sum, [id, qty]) => {
+      const type = performerTypes.find((t) => t.id === id);
+      return sum + (type ? qty * type.pricePerUnit : 0);
+    }, 0);
   };
 
   return (
@@ -124,20 +185,31 @@ const DancingPackageManager = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-6">
             Dancing Group Packages
           </h1>
-          <p className="text-gray-600 mt-3 text-xm">
+          <p className="text-gray-600 text-lg">
             Manage Traditional Dance Group Packages for Events
           </p>
           <br />
-          <button
-            onClick={() => openModal()}
-            className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 hover:shadow-xl transition-all duration-300 font-semibold transform hover:scale-105"
-          >
-            <Plus size={20} /> Add New Package
-          </button>
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => openModal()}
+              className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 transition-all font-semibold transform hover:scale-105"
+            >
+              <Plus size={20} /> Add New Package
+            </button>
+
+            <button
+              onClick={() =>
+                (window.location.href = "/admin/dancing-performer-types")
+              }
+              className="flex items-center gap-3 px-8 py-4   bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 transition-all font-semibold transform hover:scale-105"
+            >
+              <Edit2 size={20} /> Manage Dancing Performer's Unit Prices
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Packages Table */}
       <div className="bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -150,7 +222,7 @@ const DancingPackageManager = () => {
                   Name
                 </th>
                 <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Price (LKR)
+                  Total Price (LKR)
                 </th>
                 <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
                   Details
@@ -174,7 +246,7 @@ const DancingPackageManager = () => {
                 packages.map((pkg) => (
                   <tr
                     key={pkg.id}
-                    className="hover:bg-indigo-50/50 transition-colors duration-200"
+                    className="hover:bg-indigo-50/50 transition-colors"
                   >
                     <td className="px-8 py-6 text-gray-600 font-mono text-sm">
                       {!visibleIds[pkg.id] ? (
@@ -201,25 +273,23 @@ const DancingPackageManager = () => {
                     <td className="px-8 py-6 font-medium text-gray-900">
                       {pkg.name}
                     </td>
-                    <td className="px-8 py-6 text-gray-700">
-                      Rs. {pkg.price?.toLocaleString("en-LK") || "0"}
+                    <td className="px-8 py-6 text-gray-700 font-semibold">
+                      Rs. {pkg.totalPrice?.toLocaleString("en-LK") || "0"}
                     </td>
-                    <td className="px-8 py-6 text-gray-600 max-w-xs truncate">
+                    <td className="px-8 py-6 text-gray-600 max-w-xs whitespace-pre-line">
                       {pkg.details || "—"}
                     </td>
                     <td className="px-8 py-6">
-                      <div className="flex gap-4">
+                      <div className="flex gap-3">
                         <button
                           onClick={() => openModal(pkg)}
-                          className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition shadow-sm"
-                          title="Edit Package"
+                          className="p-2.5 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(pkg.id)}
-                          className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow-sm"
-                          title="Delete Package"
+                          className="p-2.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -233,111 +303,162 @@ const DancingPackageManager = () => {
         </div>
       </div>
 
-      {/* ======================== MODAL ======================== */}
+      {/* CREATE/EDIT MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-100">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-                {editingPackage ? (
-                  <>
-                    <Edit2 size={24} className="text-indigo-600" /> Edit Dancing
-                    Package
-                  </>
-                ) : (
-                  <>
-                    <Plus size={24} className="text-indigo-600" /> Add New
-                    Dancing Package
-                  </>
-                )}
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-8 py-5 flex justify-between items-center z-10">
+              <h2 className="text-2xl font-bold">
+                {editingPackage
+                  ? "Edit Dancing Package"
+                  : "Create New Dancing Package"}
               </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-              >
-                <X size={24} className="text-gray-600 hover:text-gray-900" />
+              <button onClick={() => setModalOpen(false)}>
+                <X size={28} className="text-gray-600 hover:text-black" />
               </button>
             </div>
 
-            {/* Form */}
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="px-8 py-8 space-y-6"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Package Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    {...register("name")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="e.g. Traditional Kandyan Dance Package"
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Price (LKR) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    {...register("price", { valueAsNumber: true })}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="45000"
-                    step="1000"
-                    min="0"
-                  />
-                  {errors.price && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.price.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
+            <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
+              {/* Package Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Details <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Package Name <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  rows={4}
-                  {...register("details")}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all resize-none"
-                  placeholder="Including 4 Kandyan Dancers, 2 Drummers, 4 Jayamangala Gatha girls & Ashtaka..."
+                <input
+                  {...register("name")}
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  placeholder="Ex. Package 1"
                 />
-                {errors.details && (
+                {errors.name && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.details.message}
+                    {errors.name.message}
                   </p>
                 )}
               </div>
 
-              <div className="flex justify-end gap-5 pt-6 border-t border-gray-200 mt-6">
+              {/* Performer Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Performers & Set Quantities
+                </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                  {performerTypes.map((type) => {
+                    const qty = selectedPerformers[type.id] || 0;
+                    const isSelected = qty > 0;
+
+                    return (
+                      <div
+                        key={type.id}
+                        className={`p-4 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+                          isSelected
+                            ? "bg-indigo-50 border-indigo-300"
+                            : "bg-gray-50 border-gray-200"
+                        }`}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {type.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Rs. {type.pricePerUnit.toLocaleString("en-LK")} each
+                            • Max: {type.maxAvailable}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          {isSelected ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => changeQuantity(type.id, -1)}
+                                className="p-2 rounded-full bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                                disabled={qty <= 1}
+                              >
+                                <Minus size={18} />
+                              </button>
+                              <span className="w-12 text-center font-medium text-lg">
+                                {qty}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => changeQuantity(type.id, 1)}
+                                className="p-2 rounded-full bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                                disabled={qty >= type.maxAvailable}
+                              >
+                                <Plus size={18} />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => togglePerformer(type.id)}
+                              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                            >
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedCount > 0 && (
+                  <p className="mt-4 text-sm font-medium text-gray-700">
+                    {selectedCount} performer type(s) selected
+                  </p>
+                )}
+              </div>
+
+              {/* Preview Section */}
+              <div className="border-t pt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preview (Will Generate Auto)
+                </label>
+                <div className="p-5 bg-gray-50 rounded-lg border min-h-[140px] whitespace-pre-line text-sm">
+                  {selectedCount === 0 ? (
+                    <p className="text-gray-500 italic text-center py-8">
+                      Select performers to see preview
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-medium mb-3">Package includes:</p>
+                      {Object.entries(selectedPerformers).map(([id, qty]) => {
+                        const type = performerTypes.find((t) => t.id === id);
+                        if (!type) return null;
+                        return (
+                          <p key={id} className="mb-1">
+                            • {qty} × {type.name} (Rs.{" "}
+                            {type.pricePerUnit.toLocaleString("en-LK")} each)
+                          </p>
+                        );
+                      })}
+                      <p className="mt-4 font-bold text-lg">
+                        Total estimated value: Rs.{" "}
+                        {calculatePreviewTotal().toLocaleString("en-LK")}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex justify-end gap-4 pt-6 border-t">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-10 py-3.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
+                  className="px-8 py-3 border rounded-lg text-gray-700 hover:bg-gray-100 transition"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  disabled={loading || isSubmitting}
-                  className={`px-12 py-3.5 rounded-xl font-semibold text-white shadow-xl flex items-center gap-3 transition-all ${
-                    loading || isSubmitting
+                  disabled={loading || isSubmitting || selectedCount === 0}
+                  className={`px-10 py-3 rounded-lg text-white font-medium flex items-center gap-2 transition ${
+                    loading || isSubmitting || selectedCount === 0
                       ? "bg-gray-400 cursor-not-allowed"
-                      : editingPackage
-                        ? "bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 hover:shadow-2xl"
-                        : "bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 hover:shadow-2xl"
+                      : "bg-indigo-600 hover:bg-indigo-700"
                   }`}
                 >
                   {loading || isSubmitting ? (
@@ -360,4 +481,5 @@ const DancingPackageManager = () => {
 };
 
 export default DancingPackageManager;
+
 

@@ -2,7 +2,7 @@ package com.rajawarama.backend.controller;
 
 import com.rajawarama.backend.dto.ApiResponse;
 import com.rajawarama.backend.dto.DancingGroupPackageRequest;
-import com.rajawarama.backend.entity.DancingGroupPackage;
+import com.rajawarama.backend.dto.DancingGroupPackageResponse;
 import com.rajawarama.backend.service.DancingGroupPackageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,42 +21,34 @@ public class DancingGroupPackageAdminController {
 
     private final DancingGroupPackageService dancingGroupPackageService;
 
-
-    //POST -> http://localhost:8080/api/admin/dancing-package
+    // POST → http://localhost:8080/api/admin/dancing-package
     @PostMapping
-    public ResponseEntity<ApiResponse> createDancingGroupPackage(
-            @Valid @RequestBody DancingGroupPackageRequest dancingGroupPackageRequest
-            ) {
-        dancingGroupPackageService.createDancingGroupPackage(dancingGroupPackageRequest);
-        return ResponseEntity.ok(new ApiResponse("Dancing group package created successfully"));
-
+    public ResponseEntity<DancingGroupPackageResponse> createDancingGroupPackage(
+            @Valid @RequestBody DancingGroupPackageRequest request) {
+        DancingGroupPackageResponse created = dancingGroupPackageService.createDancingGroupPackage(request);
+        return ResponseEntity.status(201).body(created);
     }
 
-
-
-    //GET -> http://localhost:8080/api/admin/dancing-package
+    // GET → http://localhost:8080/api/admin/dancing-package
     @GetMapping
-    public List<DancingGroupPackage> getAllDancingGroupPackages() {
-        return dancingGroupPackageService.getAllDancingGroupPackages();
+    public ResponseEntity<List<DancingGroupPackageResponse>> getAllDancingGroupPackages() {
+        return ResponseEntity.ok(dancingGroupPackageService.getAllDancingGroupPackages());
     }
 
-
-    //PUT -> http://localhost:8080/api/admin/dancing-package/{id}
+    // PUT → http://localhost:8080/api/admin/dancing-package/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse> updateDancingGroupPackage(
+    public ResponseEntity<DancingGroupPackageResponse> updateDancingGroupPackage(
             @PathVariable UUID id,
-            @Valid @RequestBody DancingGroupPackageRequest dancingGroupPackageRequest
-    ) {
-        dancingGroupPackageService.updateDancingGroupPackage(id, dancingGroupPackageRequest);
-        return ResponseEntity.ok(new ApiResponse("Dancing group package updated successfully"));
+            @Valid @RequestBody DancingGroupPackageRequest request) {
+        DancingGroupPackageResponse updated = dancingGroupPackageService.updateDancingGroupPackage(id, request);
+        return ResponseEntity.ok(updated);
     }
 
-
-    //DELETE -> http://localhost:8080/api/admin/dancing-package/{id}
+    // DELETE → http://localhost:8080/api/admin/dancing-package/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteDancingGroupPackage(@PathVariable UUID id) {
         dancingGroupPackageService.deleteDancingGroupPackage(id);
         return ResponseEntity.ok(new ApiResponse("Dancing group package deleted successfully"));
     }
-
 }
+

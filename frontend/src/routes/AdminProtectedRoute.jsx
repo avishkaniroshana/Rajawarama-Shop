@@ -4,9 +4,12 @@ import { useAuth } from "../context/AuthContext";
 const AdminProtectedRoute = ({ children }) => {
   const { isLoggedIn, userRole } = useAuth();
 
-  console.log("AdminProtectedRoute check:", { isLoggedIn, userRole });
-
+  // Use normalized role (already uppercase from AuthContext)
   if (!isLoggedIn || userRole !== "ADMIN") {
+    console.warn("Redirecting to /signin – reason:", {
+      isLoggedIn,
+      userRole,
+    });
     return <Navigate to="/signin" replace />;
   }
 

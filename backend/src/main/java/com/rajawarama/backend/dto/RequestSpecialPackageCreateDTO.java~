@@ -1,0 +1,37 @@
+//package com.rajawarama.backend.dto;
+//
+//import jakarta.validation.constraints.NotBlank;
+//import jakarta.validation.constraints.NotNull;
+//import lombok.Getter;
+//import lombok.Setter;
+//
+//import java.time.LocalDate;
+//import java.time.LocalTime;
+//import java.util.UUID;
+//
+//@Getter
+//@Setter
+//public class RequestSpecialPackageCreateDTO {
+//    @NotBlank
+//    private String hotelName;
+//
+//    @NotBlank
+//    private String nearestCity;
+//
+//    @NotNull
+//    private LocalDate eventDate;
+//
+//    @NotBlank
+//    private String contactNo;
+//
+//    private UUID dressItemId;         // optional?
+//
+//    private UUID dancingPackageId;    // optional?
+//
+//    private LocalTime groomArrivalTime;
+//
+//    private LocalTime poruwaStartTime;
+//
+//    private String specialNotes;
+//
+//}

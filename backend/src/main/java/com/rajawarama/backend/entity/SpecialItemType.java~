@@ -28,7 +28,7 @@ public class SpecialItemType {
     private Double pricePerUnit;
 
     @Column(nullable = false)
-    private Integer maxAvailable=999;
+    private Integer maxAvailable;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

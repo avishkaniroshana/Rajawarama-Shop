@@ -1,18 +1,14 @@
 package com.rajawarama.backend.service;
 
 import com.rajawarama.backend.dto.SpecialItemTypeRequest;
-import com.rajawarama.backend.dto.SpecialItemTypeResponse;
 import com.rajawarama.backend.entity.SpecialItemType;
 import com.rajawarama.backend.exception.BadRequestException;
-import com.rajawarama.backend.exception.ResourceNotFoundException;
 import com.rajawarama.backend.repository.SpecialItemTypeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

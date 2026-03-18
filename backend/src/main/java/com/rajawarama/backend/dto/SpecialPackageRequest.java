@@ -1,22 +1,43 @@
 package com.rajawarama.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Getter
+@Setter
 public class SpecialPackageRequest {
-    @NotBlank(message = "Package Name required!")
+
+    @NotBlank(message = "Package name is required!")
     private String name;
 
-    @NotBlank(message = "Description required!")
-    private String description;
+    @PositiveOrZero(message = "Discount must be non-negative!")
+    private Double discountPercent = 0.0;
 
-    private String freeOfChargeItems;
+    private boolean weddingCoordinationIncluded = false;
 
-    @NotNull(message = "Price required!")
-    private Double price;
+    private boolean weddingPackagingIncluded = false;
 
-    @NotNull(message = "Discount Percentage required!")
-    private Double discountPercentage;
+    private UUID linkedDancingPackageId; // optional
+
+    @NotEmpty(message = "At least one item is required!")
+    private List<ItemEntry> items = new ArrayList<>();
+
+    private List<String> freeItems = new ArrayList<>(); // ← NEW: free items
+
+    private List<UUID> freeDancingPerformerTypeIds = new ArrayList<>();
+    @Getter
+    @Setter
+    public static class ItemEntry {
+
+        @NotNull(message = "Special item type ID is required!")
+        private UUID specialItemTypeId;
+
+        @Min(value = 1, message = "Quantity must be at least 1")
+        private Integer quantity = 1;
+    }
 }

@@ -28,4 +28,3 @@ public class SpecialPackageItem {
 
     private Integer quantity = 1;
 }
-

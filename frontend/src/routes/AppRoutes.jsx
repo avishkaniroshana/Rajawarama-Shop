@@ -19,6 +19,7 @@ import UserManager from "../components/admin/UserManager";
 import CategoryManager from "../components/admin/CategoryManager";
 import DressItemsManager from "../components/admin/DressItemsManager";
 import DancingPerformerTypeManager from "../components/admin/DancingPerformerTypeManager";
+import SpecialItemTypeManager from "../components/admin/SpecialItemTypeManager";
 
 const AppRoutes = () => {
   return (
@@ -97,6 +98,15 @@ const AppRoutes = () => {
         element={
           <AdminProtectedRoute>
             <DancingPerformerTypeManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/special-item-types"
+        element={
+          <AdminProtectedRoute>
+            <SpecialItemTypeManager />
           </AdminProtectedRoute>
         }
       />

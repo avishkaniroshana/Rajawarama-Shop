@@ -9,10 +9,10 @@ const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <MainLayout>
+
           <AppRoutes />
           <ToastProvider />
-        </MainLayout>
+
       </AuthProvider>
     </BrowserRouter>
   );

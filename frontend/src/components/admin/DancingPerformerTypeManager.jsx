@@ -10,7 +10,19 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
-// Zod schema for performer type
+const T = {
+  bg: "#FAF7F4",
+  surf: "#FFFFFF",
+  bdr: "rgba(201,168,76,0.22)",
+  gold: "#C9A84C",
+  goldBg: "rgba(201,168,76,0.10)",
+  red: "#8B1A1A",
+  redBg: "rgba(139,26,26,0.07)",
+  tx: "#1C1008",
+  muted: "#7A6555",
+  sub: "#C4B5A8",
+};
+
 const performerTypeSchema = z.object({
   name: z.string().min(1, "Name is required"),
   pricePerUnit: z
@@ -21,6 +33,41 @@ const performerTypeSchema = z.object({
     .int("Must be a whole number")
     .nonnegative("Cannot be negative"),
 });
+
+const inputStyle = {
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: 7,
+  border: `1px solid ${T.bdr}`,
+  outline: "none",
+  fontFamily: "'DM Sans',sans-serif",
+  fontSize: "0.82rem",
+  color: T.tx,
+  background: T.surf,
+  boxSizing: "border-box",
+};
+
+const Field = ({ label, required, error, children }) => (
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        color: T.muted,
+        marginBottom: 5,
+        letterSpacing: "0.03em",
+      }}
+    >
+      {label}
+      {required && <span style={{ color: T.red }}> *</span>}
+    </label>
+    {children}
+    {error && (
+      <p style={{ color: T.red, fontSize: "0.72rem", marginTop: 3 }}>{error}</p>
+    )}
+  </div>
+);
 
 const DancingPerformerTypeManager = () => {
   const [types, setTypes] = useState([]);
@@ -37,11 +84,7 @@ const DancingPerformerTypeManager = () => {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(performerTypeSchema),
-    defaultValues: {
-      name: "",
-      pricePerUnit: 0,
-      maxAvailable: 0,
-    },
+    defaultValues: { name: "", pricePerUnit: 0, maxAvailable: 0 },
   });
 
   useEffect(() => {
@@ -52,7 +95,7 @@ const DancingPerformerTypeManager = () => {
     try {
       const res = await api.get("/api/admin/dancing-performer-types");
       setTypes(res.data || []);
-    } catch (err) {
+    } catch {
       toastError("Failed to load performer types");
     }
   };
@@ -94,140 +137,291 @@ const DancingPerformerTypeManager = () => {
 
   const handleDelete = async (id) => {
     const result = await MySwal.fire({
-      title: "Are you sure?",
+      title: "Permanent Delete?",
       text: "This will permanently delete this performer type!",
-      icon: "warning",
+      icon: "error",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
+      confirmButtonColor: T.red,
       cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonText: "Delete Forever",
       cancelButtonText: "Cancel",
     });
-
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/dancing-performer-types/${id}`);
         toastSuccess("Performer type deleted successfully");
         fetchPerformerTypes();
-      } catch (err) {
+      } catch {
         toastError("Failed to delete performer type");
       }
     }
   };
 
-  const toggleIdVisibility = (id) => {
+  const toggleIdVisibility = (id) =>
     setVisibleIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 md:p-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-6">
-            Manage Dancing Group Units WithPrices
-          </h1>
-          <p className="text-gray-600 mt-3 text-lg">
-            Define performer types, their unit prices, and maximum availability
-          </p>
-          <br />
-          <button
-            onClick={() => openModal()}
-            className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 hover:shadow-xl transition-all duration-300 font-semibold transform hover:scale-105"
-          >
-            <Plus size={20} /> Add New Dancing Group Performer
-          </button>
-        </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: T.bg,
+        padding: "28px 28px 60px",
+        fontFamily: "'DM Sans',sans-serif",
+      }}
+    >
+      <div style={{ marginBottom: 22 }}>
+        <h1
+          style={{
+            fontFamily: "'Cormorant Garamond',serif",
+            fontSize: "2rem",
+            fontWeight: 700,
+            color: T.tx,
+            margin: 0,
+          }}
+        >
+          Dancing Group <span style={{ color: T.red }}>Unit Prices</span>
+        </h1>
+        <p
+          style={{
+            color: T.muted,
+            fontSize: "0.82rem",
+            marginTop: 4,
+            marginBottom: 0,
+          }}
+        >
+          Manage dancing performer types and their per-unit pricing
+        </p>
       </div>
 
-      {/* Table */}
-      <div className="bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-              <tr>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  ID
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Name
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Price per Unit (LKR)
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Max Available
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Actions
-                </th>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))",
+          gap: 12,
+          marginBottom: 22,
+        }}
+      >
+        {[
+          { label: "Total Types", value: types.length, color: T.tx },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            style={{
+              background: T.surf,
+              border: `1px solid ${T.bdr}`,
+              borderRadius: 10,
+              padding: "14px 16px",
+              boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 4px 12px rgba(28,16,8,0.04)`,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontSize: "1.9rem",
+                fontWeight: 700,
+                color,
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </div>
+            <div
+              style={{
+                fontSize: "0.63rem",
+                color: T.muted,
+                marginTop: 3,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: 16,
+        }}
+      >
+        <button
+          onClick={() => openModal()}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "9px 18px",
+            background: T.red,
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 600,
+            letterSpacing: "0.04em",
+            boxShadow: `0 2px 8px rgba(139,26,26,0.18)`,
+          }}
+        >
+          <Plus size={15} /> Add New Performer Type
+        </button>
+      </div>
+
+      {/* --------------------------------------- TABLE  */}
+      <div
+        style={{
+          background: T.surf,
+          border: `1px solid ${T.bdr}`,
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 6px 20px rgba(28,16,8,0.04)`,
+        }}
+      >
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.78rem",
+              minWidth: 560,
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  background: `linear-gradient(90deg,${T.goldBg},rgba(201,168,76,0.05))`,
+                  borderBottom: `1px solid ${T.bdr}`,
+                }}
+              >
+                <Th>ID</Th>
+                <Th>Performer Name</Th>
+                <Th>Price / Unit (LKR)</Th>
+                <Th>Max Available</Th>
+                <Th>Actions</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody>
               {types.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-8 py-16 text-center text-gray-600 text-lg font-medium"
+                    style={{
+                      padding: "40px 16px",
+                      textAlign: "center",
+                      color: T.muted,
+                      fontSize: "0.85rem",
+                    }}
                   >
-                    No performer types found. Add one above.
+                    No performer types found. Add your first type above.
                   </td>
                 </tr>
               ) : (
-                types.map((type) => (
+                types.map((type, idx) => (
                   <tr
                     key={type.id}
-                    className="hover:bg-indigo-50/50 transition-colors duration-200"
+                    style={{
+                      borderBottom: `1px solid rgba(201,168,76,0.10)`,
+                      background: idx % 2 === 0 ? T.surf : "#FDFBF8",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = T.goldBg)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        idx % 2 === 0 ? T.surf : "#FDFBF8")
+                    }
                   >
-                    <td className="px-8 py-6 text-gray-600 font-mono text-sm">
+                    <Td>
                       {!visibleIds[type.id] ? (
                         <button
                           onClick={() => toggleIdVisibility(type.id)}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm underline"
+                          style={{
+                            color: T.gold,
+                            fontSize: "0.72rem",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
                         >
-                          Show ID
+                          Show
                         </button>
                       ) : (
                         <>
                           <button
                             onClick={() => toggleIdVisibility(type.id)}
-                            className="text-indigo-600 hover:text-indigo-800 text-sm underline"
+                            style={{
+                              color: T.gold,
+                              fontSize: "0.72rem",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
                           >
-                            Hide ID
+                            Hide
                           </button>
-                          <div className="mt-2 break-all text-gray-500 text-xs">
+                          <div
+                            style={{
+                              marginTop: 3,
+                              wordBreak: "break-all",
+                              color: T.muted,
+                              fontSize: "0.68rem",
+                              fontFamily: "monospace",
+                              maxWidth: 140,
+                            }}
+                          >
                             {type.id}
                           </div>
                         </>
                       )}
-                    </td>
-                    <td className="px-8 py-6 font-medium text-gray-900">
-                      {type.name}
-                    </td>
-                    <td className="px-8 py-6 text-gray-700 font-semibold">
-                      Rs. {type.pricePerUnit?.toLocaleString("en-LK") || "0"}
-                    </td>
-                    <td className="px-8 py-6 text-gray-700">
-                      {type.maxAvailable}
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => openModal(type)}
-                          className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition shadow-sm"
+                    </Td>
+                    <Td>
+                      <span style={{ fontWeight: 500, color: T.tx }}>
+                        {type.name}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span style={{ fontWeight: 600, color: T.tx }}>
+                        Rs. {type.pricePerUnit?.toLocaleString("en-LK") || "0"}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span style={{ color: T.muted }}>
+                        {type.maxAvailable}
+                      </span>
+                    </Td>
+                    <Td>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          alignItems: "center",
+                        }}
+                      >
+                        <ActionBtn
                           title="Edit"
+                          bg="rgba(201,168,76,0.12)"
+                          color={T.gold}
+                          hoverBg="rgba(201,168,76,0.24)"
+                          onClick={() => openModal(type)}
                         >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(type.id)}
-                          className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow-sm"
+                          <Edit2 size={13} />
+                        </ActionBtn>
+                        <ActionBtn
                           title="Delete"
+                          bg={T.redBg}
+                          color={T.red}
+                          hoverBg="rgba(139,26,26,0.15)"
+                          onClick={() => handleDelete(type.id)}
                         >
-                          <Trash2 size={18} />
-                        </button>
+                          <Trash2 size={13} />
+                        </ActionBtn>
                       </div>
-                    </td>
+                    </Td>
                   </tr>
                 ))
               )}
@@ -236,113 +430,186 @@ const DancingPerformerTypeManager = () => {
         </div>
       </div>
 
-      {/* MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-100">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(28,10,0,0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: T.surf,
+              borderRadius: 16,
+              border: `1px solid ${T.bdr}`,
+              boxShadow: "0 24px 64px rgba(28,10,0,0.22)",
+              width: "100%",
+              maxWidth: 480,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 22px",
+                borderBottom: `1px solid ${T.bdr}`,
+                position: "sticky",
+                top: 0,
+                background: T.surf,
+                zIndex: 10,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Cormorant Garamond',serif",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: T.tx,
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 {editingType ? (
                   <>
-                    <Edit2 size={24} className="text-indigo-600" /> Edit
-                    Performer Type
+                    <Edit2 size={18} color={T.gold} /> Edit Performer Type
                   </>
                 ) : (
                   <>
-                    <Plus size={24} className="text-indigo-600" /> Add New
-                    Performer Type
+                    <Plus size={18} color={T.gold} /> Add Performer Type
                   </>
                 )}
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: T.muted,
+                  padding: 4,
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                }}
               >
-                <X size={24} className="text-gray-600 hover:text-gray-900" />
+                <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="px-8 py-8 space-y-6"
+              style={{
+                padding: "20px 22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
             >
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Performer Name <span className="text-red-500">*</span>
-                </label>
+              <Field
+                label="Performer Name"
+                required
+                error={errors.name?.message}
+              >
                 <input
                   type="text"
                   {...register("name")}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
                   placeholder="e.g. Kandian Dancer"
+                  style={inputStyle}
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Price per Unit (LKR) <span className="text-red-500">*</span>
-                </label>
+              </Field>
+              <Field
+                label="Price per Unit (LKR)"
+                required
+                error={errors.pricePerUnit?.message}
+              >
                 <input
                   type="number"
                   step="100"
                   {...register("pricePerUnit", { valueAsNumber: true })}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
                   placeholder="12000"
+                  style={inputStyle}
                 />
-                {errors.pricePerUnit && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.pricePerUnit.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Max Available <span className="text-red-500">*</span>
-                </label>
+              </Field>
+              <Field
+                label="Max Available"
+                required
+                error={errors.maxAvailable?.message}
+              >
                 <input
                   type="number"
                   {...register("maxAvailable", { valueAsNumber: true })}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
                   placeholder="8"
+                  style={inputStyle}
                 />
-                {errors.maxAvailable && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.maxAvailable.message}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div className="flex justify-end gap-5 pt-6 border-t border-gray-200 mt-6">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                  paddingTop: 14,
+                  borderTop: `1px solid ${T.bdr}`,
+                  marginTop: 4,
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-10 py-3.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: 8,
+                    border: `1px solid ${T.bdr}`,
+                    background: T.surf,
+                    color: T.muted,
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                  }}
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
-                  className={`px-12 py-3.5 rounded-xl font-semibold text-white shadow-xl flex items-center gap-3 transition-all ${
-                    loading || isSubmitting
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : editingType
-                        ? "bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 hover:shadow-2xl"
-                        : "bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 hover:shadow-2xl"
-                  }`}
+                  style={{
+                    padding: "9px 24px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: loading || isSubmitting ? "not-allowed" : "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    background:
+                      loading || isSubmitting
+                        ? "#aaa"
+                        : editingType
+                          ? "linear-gradient(135deg,#C9A84C,#E2C56A)"
+                          : T.red,
+                    boxShadow:
+                      loading || isSubmitting
+                        ? "none"
+                        : "0 2px 10px rgba(139,26,26,0.22)",
+                  }}
                 >
                   {loading || isSubmitting ? (
                     <>
-                      <Loader2 size={18} className="animate-spin" /> Saving...
+                      <Loader2 size={14} className="animate-spin" /> Saving…
                     </>
                   ) : editingType ? (
                     "Update Type"
@@ -356,6 +623,62 @@ const DancingPerformerTypeManager = () => {
         </div>
       )}
     </div>
+  );
+};
+
+const Th = ({ children }) => (
+  <th
+    style={{
+      padding: "10px 12px",
+      textAlign: "left",
+      fontSize: "0.70rem",
+      fontWeight: 700,
+      color: "#7A6555",
+      letterSpacing: "0.10em",
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {children}
+  </th>
+);
+const Td = ({ children }) => (
+  <td
+    style={{
+      padding: "9px 12px",
+      verticalAlign: "middle",
+      fontSize: "0.78rem",
+      color: "#1C1008",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {children}
+  </td>
+);
+const ActionBtn = ({ children, title, bg, color, hoverBg, onClick }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 28,
+        height: 28,
+        borderRadius: 6,
+        border: "none",
+        cursor: "pointer",
+        transition: "background 0.15s",
+        background: hovered ? hoverBg : bg,
+        color,
+      }}
+    >
+      {children}
+    </button>
   );
 };
 

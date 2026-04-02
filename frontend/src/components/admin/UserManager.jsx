@@ -10,7 +10,19 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
-// Zod schema
+const T = {
+  bg: "#FAF7F4",
+  surf: "#FFFFFF",
+  bdr: "rgba(201,168,76,0.22)",
+  gold: "#C9A84C",
+  goldBg: "rgba(201,168,76,0.10)",
+  red: "#8B1A1A",
+  redBg: "rgba(139,26,26,0.07)",
+  tx: "#1C1008",
+  muted: "#7A6555",
+  sub: "#C4B5A8",
+};
+
 const userSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email format"),
@@ -24,6 +36,41 @@ const userSchema = z.object({
   role: z.enum(["CUSTOMER", "ADMIN"]),
 });
 
+const Field = ({ label, required, error, children }) => (
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        color: T.muted,
+        marginBottom: 5,
+        letterSpacing: "0.03em",
+      }}
+    >
+      {label}
+      {required && <span style={{ color: T.red }}> *</span>}
+    </label>
+    {children}
+    {error && (
+      <p style={{ color: T.red, fontSize: "0.72rem", marginTop: 3 }}>{error}</p>
+    )}
+  </div>
+);
+
+const inputStyle = {
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: 7,
+  border: `1px solid ${T.bdr}`,
+  outline: "none",
+  fontFamily: "'DM Sans',sans-serif",
+  fontSize: "0.82rem",
+  color: T.tx,
+  background: T.surf,
+  boxSizing: "border-box",
+};
+
 const UserManager = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -34,11 +81,7 @@ const UserManager = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Per-row ID visibility state
   const [visibleIds, setVisibleIds] = useState({});
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -62,7 +105,6 @@ const UserManager = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-
   useEffect(() => {
     applyFilters();
   }, [users, search, roleFilter, statusFilter]);
@@ -70,37 +112,27 @@ const UserManager = () => {
   const fetchUsers = async () => {
     try {
       const res = await api.get("/api/admin/users");
-      const data = res.data || [];
-      setUsers(data);
-      applyFilters();
-    } catch (err) {
+      setUsers(res.data || []);
+    } catch {
       toastError("Failed to load users");
     }
   };
 
   const applyFilters = () => {
-    let result = [...users];
-
+    let r = [...users];
     if (search.trim()) {
-      const lower = search.toLowerCase();
-      result = result.filter(
+      const l = search.toLowerCase();
+      r = r.filter(
         (u) =>
-          u.fullName?.toLowerCase().includes(lower) ||
-          u.email?.toLowerCase().includes(lower) ||
-          u.phone?.toLowerCase().includes(lower),
+          u.fullName?.toLowerCase().includes(l) ||
+          u.email?.toLowerCase().includes(l) ||
+          u.phone?.toLowerCase().includes(l),
       );
     }
-
-    if (roleFilter !== "ALL") {
-      result = result.filter((u) => u.role === roleFilter);
-    }
-
-    if (statusFilter !== "ALL") {
-      const isDeactivated = statusFilter === "DEACTIVATED";
-      result = result.filter((u) => u.deleted === isDeactivated);
-    }
-
-    setFilteredUsers(result);
+    if (roleFilter !== "ALL") r = r.filter((u) => u.role === roleFilter);
+    if (statusFilter !== "ALL")
+      r = r.filter((u) => u.deleted === (statusFilter === "DEACTIVATED"));
+    setFilteredUsers(r);
     setCurrentPage(1);
   };
 
@@ -123,9 +155,9 @@ const UserManager = () => {
     setLoading(true);
     try {
       if (editingUser) {
-        const updateData = { ...data };
-        if (!updateData.password) delete updateData.password;
-        await api.put(`/api/admin/users/${editingUser.userId}`, updateData);
+        const payload = { ...data };
+        if (!payload.password) delete payload.password;
+        await api.put(`/api/admin/users/${editingUser.userId}`, payload);
         toastSuccess("User updated successfully");
       } else {
         await api.post("/api/admin/users", data);
@@ -143,20 +175,19 @@ const UserManager = () => {
   const handleSoftDelete = async (userId) => {
     const result = await MySwal.fire({
       title: "Soft Delete?",
-      text: "User will be deactivated (can be restored later).",
+      text: "User will be deactivated.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#f59e0b",
+      confirmButtonColor: "#C9A84C",
       cancelButtonColor: "#6b7280",
       confirmButtonText: "Deactivate",
     });
-
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/users/soft/${userId}`);
         toastSuccess("User deactivated");
         await fetchUsers();
-      } catch (err) {
+      } catch {
         toastError("Soft delete failed");
       }
     }
@@ -168,423 +199,784 @@ const UserManager = () => {
       text: "This cannot be undone!",
       icon: "error",
       showCancelButton: true,
-      confirmButtonColor: "#dc2626",
+      confirmButtonColor: "#8B1A1A",
       cancelButtonColor: "#6b7280",
       confirmButtonText: "Delete Forever",
     });
-
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/users/hard/${userId}`);
-        toastSuccess("User Permanently Deleted");
+        toastSuccess("User permanently deleted");
         await fetchUsers();
-      } catch (err) {
-        toastError("User Delete Failed!");
+      } catch {
+        toastError("Delete failed");
       }
     }
   };
 
-  const toggleIdVisibility = (id) => {
-    setVisibleIds((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const toggleIdVisibility = (id) =>
+    setVisibleIds((p) => ({ ...p, [id]: !p[id] }));
 
-  // Pagination slice
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentPageUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
+  /* stats */
+  const total = users.length;
+  const active = users.filter((u) => !u.deleted).length;
+  const deactivated = users.filter((u) => u.deleted).length;
+  const admins = users.filter((u) => u.role === "ADMIN").length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 md:p-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-        <div>
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">
-            User Management
-          </h2>
-          <p className="text-gray-600 mt-3 text-lg">
-            Create, update, deactivate or permanently remove user accounts
-          </p>
-          <br />
-          <button
-            onClick={() => openModal()}
-            className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 hover:shadow-xl transition-all duration-300 font-semibold transform hover:scale-105"
-          >
-            <Plus size={20} /> Add New User
-          </button>
-        </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: T.bg,
+        padding: "28px 28px 60px",
+        fontFamily: "'DM Sans',sans-serif",
+      }}
+    >
+      <div style={{ marginBottom: 22 }}>
+        <h1
+          style={{
+            fontFamily: "'Cormorant Garamond',serif",
+            fontSize: "2rem",
+            fontWeight: 700,
+            color: T.tx,
+            margin: 0,
+          }}
+        >
+          User <span style={{ color: T.red }}>Management</span>
+        </h1>
+        <p
+          style={{
+            color: T.muted,
+            fontSize: "0.82rem",
+            marginTop: 4,
+            marginBottom: 0,
+          }}
+        >
+          Create, update, deactivate or permanently remove user accounts
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="mb-10 flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-6">
-        <h3 className="text-2xl font-bold text-gray-900">
-          Available Users List
-        </h3>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px,1fr))",
+          gap: 12,
+          marginBottom: 22,
+        }}
+      >
+        {[
+          { label: "Total Users", value: total, color: T.tx },
+          { label: "Active", value: active, color: "#15803D" },
+          { label: "Deactivated", value: deactivated, color: T.red },
+          { label: "Admins", value: admins, color: "#3730A3" },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            style={{
+              background: T.surf,
+              border: `1px solid ${T.bdr}`,
+              borderRadius: 10,
+              padding: "14px 16px",
+              boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 4px 12px rgba(28,16,8,0.04)`,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontSize: "1.9rem",
+                fontWeight: 700,
+                color,
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </div>
+            <div
+              style={{
+                fontSize: "0.63rem",
+                color: T.muted,
+                marginTop: 3,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <div className="flex flex-wrap gap-4">
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 16,
+        }}
+      >
+        {/* Search */}
+        <div
+          style={{
+            position: "relative",
+            flex: "1",
+            minWidth: 180,
+            maxWidth: 280,
+          }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              left: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: T.sub,
+              fontSize: "0.82rem",
+            }}
+          >
+            🔍
+          </span>
           <input
             type="text"
-            placeholder="Search name, email, phone..."
-            className="px-6 py-3 rounded-2xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 outline-none bg-white/80 shadow-sm w-64"
+            placeholder="Search name, email, phone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={{ ...inputStyle, paddingLeft: 30 }}
           />
-
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-6 py-3 rounded-2xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 outline-none bg-white/80 shadow-sm"
-          >
-            <option value="ALL">All Roles</option>
-            <option value="CUSTOMER">Customer</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-6 py-3 rounded-2xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 outline-none bg-white/80 shadow-sm"
-          >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="DEACTIVATED">Deactivated</option>
-          </select>
-
-          <button
-            onClick={() => setShowIdColumn(!showIdColumn)}
-            className="flex items-center gap-2 px-4 py-3 bg-white/80 border border-gray-200 rounded-2xl hover:bg-gray-50 transition shadow-sm"
-          >
-            {showIdColumn ? <EyeOff size={18} /> : <Eye size={18} />}
-            {showIdColumn ? "Hide ID" : "Show ID"}
-          </button>
         </div>
+
+        {/* Role filter */}
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          style={{ ...inputStyle, width: "auto", minWidth: 120 }}
+        >
+          <option value="ALL">All Roles</option>
+          <option value="CUSTOMER">Customer</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{ ...inputStyle, width: "auto", minWidth: 130 }}
+        >
+          <option value="ALL">All Status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="DEACTIVATED">Deactivated</option>
+        </select>
+
+        {/* Toggle ID column */}
+        <button
+          onClick={() => setShowIdColumn((c) => !c)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 12px",
+            border: `1px solid ${T.bdr}`,
+            borderRadius: 7,
+            background: T.surf,
+            cursor: "pointer",
+            fontSize: "0.78rem",
+            color: T.muted,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {showIdColumn ? <EyeOff size={14} /> : <Eye size={14} />}
+          {showIdColumn ? "Hide ID" : "Show ID"}
+        </button>
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Add User button */}
+        <button
+          onClick={() => openModal()}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "9px 18px",
+            background: T.red,
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 600,
+            letterSpacing: "0.04em",
+            boxShadow: `0 2px 8px rgba(139,26,26,0.18)`,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Plus size={15} /> Add New User
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-              <tr>
-                {showIdColumn && (
-                  <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                    ID
-                  </th>
-                )}
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Name
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Email
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Phone
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Role
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Created At
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Last Login
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Status
-                </th>
-                <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700">
-                  Actions
-                </th>
+      <div
+        style={{
+          background: T.surf,
+          border: `1px solid ${T.bdr}`,
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 6px 20px rgba(28,16,8,0.04)`,
+        }}
+      >
+        {/* scroll wrapper — ONLY horizontal scroll, no vertical clipping */}
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.78rem",
+              minWidth: 720,
+            }}
+          >
+            {/* HEAD */}
+            <thead>
+              <tr
+                style={{
+                  background: `linear-gradient(90deg,${T.goldBg},rgba(201,168,76,0.05))`,
+                  borderBottom: `1px solid ${T.bdr}`,
+                }}
+              >
+                {showIdColumn && <Th>ID</Th>}
+                <Th>Name</Th>
+                <Th>Email</Th>
+                <Th>Phone</Th>
+                <Th>Role</Th>
+                <Th>Created At</Th>
+                <Th>Last Login</Th>
+                <Th>Status</Th>
+                <Th>Actions</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+
+            {/* BODY */}
+            <tbody>
               {currentPageUsers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={showIdColumn ? 9 : 8}
-                    className="px-8 py-16 text-center text-gray-600 text-lg font-medium"
+                    style={{
+                      padding: "40px 16px",
+                      textAlign: "center",
+                      color: T.muted,
+                      fontSize: "0.85rem",
+                    }}
                   >
                     No users found matching your filters.
                   </td>
                 </tr>
               ) : (
-                currentPageUsers.map((user) => (
+                currentPageUsers.map((user, idx) => (
                   <tr
                     key={user.userId}
-                    className="hover:bg-indigo-50/50 transition-colors duration-200"
+                    style={{
+                      borderBottom: `1px solid rgba(201,168,76,0.10)`,
+                      background: idx % 2 === 0 ? T.surf : "#FDFBF8",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = T.goldBg)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        idx % 2 === 0 ? T.surf : "#FDFBF8")
+                    }
                   >
+                    {/* ID column (optional) */}
                     {showIdColumn && (
-                      <td className="px-8 py-6 text-gray-600 font-mono text-sm">
+                      <Td>
                         {!visibleIds[user.userId] ? (
                           <button
                             onClick={() => toggleIdVisibility(user.userId)}
-                            className="text-indigo-600 hover:text-indigo-800 text-sm underline"
+                            style={{
+                              color: T.gold,
+                              fontSize: "0.72rem",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
                           >
-                            Show ID
+                            Show
                           </button>
                         ) : (
                           <>
                             <button
                               onClick={() => toggleIdVisibility(user.userId)}
-                              className="text-indigo-600 hover:text-indigo-800 text-sm underline"
+                              style={{
+                                color: T.gold,
+                                fontSize: "0.72rem",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
                             >
-                              Hide ID
+                              Hide
                             </button>
-                            <div className="mt-2 break-all text-gray-500 text-xs">
+                            <div
+                              style={{
+                                marginTop: 3,
+                                wordBreak: "break-all",
+                                color: T.muted,
+                                fontSize: "0.68rem",
+                                fontFamily: "monospace",
+                                maxWidth: 140,
+                              }}
+                            >
                               {user.userId}
                             </div>
                           </>
                         )}
-                      </td>
+                      </Td>
                     )}
-                    <td className="px-8 py-6">{user.fullName}</td>
-                    <td className="px-8 py-6">{user.email}</td>
-                    <td className="px-8 py-6">{user.phone || "—"}</td>
-                    <td className="px-8 py-6">
+
+                    {/* Name */}
+                    <Td>
+                      <span style={{ fontWeight: 500, color: T.tx }}>
+                        {user.fullName}
+                      </span>
+                    </Td>
+
+                    {/* Email */}
+                    <Td>
+                      <span style={{ color: T.muted }}>{user.email}</span>
+                    </Td>
+
+                    {/* Phone */}
+                    <Td>
+                      <span style={{ color: T.muted }}>
+                        {user.phone || "—"}
+                      </span>
+                    </Td>
+
+                    {/* Role badge */}
+                    <Td>
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          user.role === "ADMIN"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 9px",
+                          borderRadius: 40,
+                          fontSize: "0.68rem",
+                          fontWeight: 600,
+                          letterSpacing: "0.07em",
+                          ...(user.role === "ADMIN"
+                            ? {
+                                background: "rgba(55,48,163,0.10)",
+                                color: "#3730A3",
+                                border: "1px solid rgba(55,48,163,0.22)",
+                              }
+                            : {
+                                background: "rgba(21,128,61,0.09)",
+                                color: "#15803D",
+                                border: "1px solid rgba(21,128,61,0.22)",
+                              }),
+                        }}
                       >
                         {user.role}
                       </span>
-                    </td>
-                    <td className="px-8 py-6 text-gray-600 text-sm">
+                    </Td>
+
+                    {/* Created At */}
+                    <Td>
                       {user.createdAt
-                        ? new Date(user.createdAt).toLocaleString()
+                        ? new Date(user.createdAt).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
                         : "—"}
-                    </td>
-                    <td className="px-8 py-6 text-gray-600 text-sm">
-                      {user.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString()
-                        : "—"}
-                    </td>
-                    <td className="px-8 py-6">
-                      {user.deleted ? (
-                        <span className="text-red-600 font-medium">
-                          Deactivated
-                        </span>
+                    </Td>
+
+                    {/* Last Login */}
+                    <Td>
+                      {user.lastLogin ? (
+                        new Date(user.lastLogin).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
                       ) : (
-                        <span className="text-green-600 font-medium">
-                          Active
-                        </span>
+                        <span style={{ color: T.sub }}>Never</span>
                       )}
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex gap-4">
-                        <button
+                    </Td>
+
+                    {/* Status badge */}
+                    <Td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 9px",
+                          borderRadius: 40,
+                          fontSize: "0.68rem",
+                          fontWeight: 600,
+                          ...(user.deleted
+                            ? {
+                                background: T.redBg,
+                                color: T.red,
+                                border: `1px solid rgba(139,26,26,0.22)`,
+                              }
+                            : {
+                                background: "rgba(21,128,61,0.09)",
+                                color: "#15803D",
+                                border: "1px solid rgba(21,128,61,0.22)",
+                              }),
+                        }}
+                      >
+                        {user.deleted ? "Deactivated" : "Active"}
+                      </span>
+                    </Td>
+
+                    {/* Actions */}
+                    <Td>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          alignItems: "center",
+                        }}
+                      >
+                        {/* Edit */}
+                        <ActionBtn
+                          title="Edit"
+                          bg="rgba(201,168,76,0.12)"
+                          color={T.gold}
+                          hoverBg="rgba(201,168,76,0.24)"
                           onClick={() => openModal(user)}
-                          className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition shadow-sm"
-                          title="Edit User"
                         >
-                          <Edit2 size={18} />
-                        </button>
+                          <Edit2 size={13} />
+                        </ActionBtn>
+
+                        {/* Soft delete */}
                         {!user.deleted && (
-                          <button
+                          <ActionBtn
+                            title="Deactivate"
+                            bg="rgba(217,119,6,0.10)"
+                            color="#B45309"
+                            hoverBg="rgba(217,119,6,0.20)"
                             onClick={() => handleSoftDelete(user.userId)}
-                            className="p-3 rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition shadow-sm"
-                            title="Deactivate (Soft Delete)"
                           >
-                            <Trash2 size={18} />
-                          </button>
+                            <EyeOff size={13} />
+                          </ActionBtn>
                         )}
-                        <button
+
+                        {/* Hard delete */}
+                        <ActionBtn
+                          title="Delete Forever"
+                          bg={T.redBg}
+                          color={T.red}
+                          hoverBg="rgba(139,26,26,0.15)"
                           onClick={() => handleHardDelete(user.userId)}
-                          className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow-sm"
-                          title="Permanent Delete"
                         >
-                          <Trash2 size={18} />
-                        </button>
+                          <Trash2 size={13} />
+                        </ActionBtn>
                       </div>
-                    </td>
+                    </Td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+
+        {filteredUsers.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 18px",
+              borderTop: `1px solid ${T.bdr}`,
+              background: "rgba(250,247,244,0.70)",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: "0.75rem", color: T.muted }}>
+              Showing{" "}
+              <strong style={{ color: T.tx }}>
+                {indexOfFirst + 1}–{Math.min(indexOfLast, filteredUsers.length)}
+              </strong>{" "}
+              of <strong style={{ color: T.tx }}>{filteredUsers.length}</strong>{" "}
+              users
+            </span>
+
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <PagBtn
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              >
+                ‹ Prev
+              </PagBtn>
+
+              {/* page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (n) =>
+                    n === 1 ||
+                    n === totalPages ||
+                    Math.abs(n - currentPage) <= 1,
+                )
+                .reduce((acc, n, i, arr) => {
+                  if (i > 0 && n - arr[i - 1] > 1)
+                    acc.push(
+                      <span
+                        key={`gap-${n}`}
+                        style={{ color: T.sub, fontSize: "0.78rem" }}
+                      >
+                        …
+                      </span>,
+                    );
+                  acc.push(
+                    <PagBtn
+                      key={n}
+                      active={n === currentPage}
+                      onClick={() => setCurrentPage(n)}
+                    >
+                      {n}
+                    </PagBtn>,
+                  );
+                  return acc;
+                }, [])}
+
+              <PagBtn
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+              >
+                Next ›
+              </PagBtn>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Pagination */}
-      {filteredUsers.length > 0 && (
-        <div className="flex justify-center items-center gap-6 mt-10">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-6 py-3 rounded-xl bg-indigo-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-indigo-700 transition"
-          >
-            Previous
-          </button>
-
-          <span className="text-lg font-medium text-gray-700">
-            Page {currentPage} of{" "}
-            {Math.ceil(filteredUsers.length / itemsPerPage)}
-          </span>
-
-          <button
-            onClick={() =>
-              setCurrentPage((p) =>
-                Math.min(p + 1, Math.ceil(filteredUsers.length / itemsPerPage)),
-              )
-            }
-            disabled={
-              currentPage === Math.ceil(filteredUsers.length / itemsPerPage)
-            }
-            className="px-6 py-3 rounded-xl bg-indigo-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-indigo-700 transition"
-          >
-            Next
-          </button>
-        </div>
-      )}
-
-      {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-100">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(28,10,0,0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: T.surf,
+              borderRadius: 16,
+              border: `1px solid ${T.bdr}`,
+              boxShadow: "0 24px 64px rgba(28,10,0,0.22)",
+              width: "100%",
+              maxWidth: 600,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            {/* Modal header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 22px",
+                borderBottom: `1px solid ${T.bdr}`,
+                position: "sticky",
+                top: 0,
+                background: T.surf,
+                zIndex: 10,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Cormorant Garamond',serif",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: T.tx,
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 {editingUser ? (
                   <>
-                    <Edit2 size={24} className="text-indigo-600" /> Edit User
+                    <Edit2 size={18} color={T.gold} /> Edit User
                   </>
                 ) : (
                   <>
-                    <Plus size={24} className="text-indigo-600" /> Add New User
+                    <Plus size={18} color={T.gold} /> Add New User
                   </>
                 )}
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: T.muted,
+                  padding: 4,
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                }}
               >
-                <X size={24} className="text-gray-600 hover:text-gray-900" />
+                <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
+            {/* Modal body */}
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="px-8 py-8 space-y-6"
+              style={{
+                padding: "20px 22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                }}
+              >
+                <Field
+                  label="Full Name"
+                  required
+                  error={errors.fullName?.message}
+                >
                   <input
                     type="text"
                     {...register("fullName")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="Enter user's name"
+                    placeholder="Enter full name"
+                    style={inputStyle}
                   />
-                  {errors.fullName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.fullName.message}
-                    </p>
-                  )}
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Email <span className="text-red-500">*</span>
-                  </label>
+                <Field label="Email" required error={errors.email?.message}>
                   <input
                     type="email"
                     {...register("email")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
                     placeholder="user@gmail.com"
+                    style={inputStyle}
                   />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
+                </Field>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Phone <span className="text-red-500">*</span>
-                  </label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                }}
+              >
+                <Field label="Phone" required error={errors.phone?.message}>
                   <input
                     type="text"
                     {...register("phone")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
                     placeholder="+94XXXXXXXXX or 0XXXXXXXXX"
+                    style={inputStyle}
                   />
-                  {errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Password{" "}
-                    {editingUser ? "(leave blank to keep current)" : "*"}
-                  </label>
+                <Field
+                  label={`Password${editingUser ? " (blank = keep current)" : ""}`}
+                  required={!editingUser}
+                  error={errors.password?.message}
+                >
                   <input
                     type="password"
                     {...register("password")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="********"
+                    placeholder="••••••••"
+                    style={inputStyle}
                   />
-                  {errors.password && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.password.message}
-                    </p>
-                  )}
-                </div>
+                </Field>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Role <span className="text-red-500">*</span>
-                </label>
+              <Field label="Role" required error={errors.role?.message}>
                 <select
                   {...register("role")}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
+                  style={{ ...inputStyle, width: "auto" }}
                 >
                   <option value="CUSTOMER">Customer</option>
                   <option value="ADMIN">Admin</option>
                 </select>
-                {errors.role && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.role.message}
-                  </p>
-                )}
-              </div>
+              </Field>
 
-              <div className="flex justify-end gap-5 pt-6 border-t border-gray-200 mt-6">
+              {/* Modal footer */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                  paddingTop: 14,
+                  borderTop: `1px solid ${T.bdr}`,
+                  marginTop: 4,
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-10 py-3.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium"
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: 8,
+                    border: `1px solid ${T.bdr}`,
+                    background: T.surf,
+                    color: T.muted,
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
-                  className={`px-12 py-3.5 rounded-xl font-semibold text-white shadow-xl flex items-center gap-3 transition-all ${
-                    loading || isSubmitting
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : editingUser
-                        ? "bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-600 hover:shadow-2xl"
-                        : "bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 hover:shadow-2xl"
-                  }`}
+                  style={{
+                    padding: "9px 24px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: loading || isSubmitting ? "not-allowed" : "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    background:
+                      loading || isSubmitting
+                        ? "#aaa"
+                        : editingUser
+                          ? "linear-gradient(135deg,#C9A84C,#E2C56A)"
+                          : T.red,
+                    boxShadow:
+                      loading || isSubmitting
+                        ? "none"
+                        : "0 2px 10px rgba(139,26,26,0.22)",
+                  }}
                 >
                   {loading || isSubmitting ? (
                     <>
-                      <Loader2 size={18} className="animate-spin" /> Saving...
+                      <Loader2 size={14} className="animate-spin" /> Saving…
                     </>
                   ) : editingUser ? (
                     "Update User"
@@ -601,6 +993,92 @@ const UserManager = () => {
   );
 };
 
+const Th = ({ children }) => (
+  <th
+    style={{
+      padding: "10px 12px",
+      textAlign: "left",
+      fontSize: "0.70rem",
+      fontWeight: 700,
+      color: "#7A6555",
+      letterSpacing: "0.10em",
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {children}
+  </th>
+);
+
+const Td = ({ children }) => (
+  <td
+    style={{
+      padding: "9px 12px",
+      verticalAlign: "middle",
+      fontSize: "0.78rem",
+      color: "#1C1008",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {children}
+  </td>
+);
+
+const ActionBtn = ({ children, title, bg, color, hoverBg, onClick }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 28,
+        height: 28,
+        borderRadius: 6,
+        border: "none",
+        cursor: "pointer",
+        transition: "background 0.15s",
+        background: hovered ? hoverBg : bg,
+        color,
+      }}
+    >
+      {children}
+    </button>
+  );
+};
+
+const PagBtn = ({ children, onClick, disabled, active }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: "5px 10px",
+        borderRadius: 6,
+        fontSize: "0.75rem",
+        fontWeight: active ? 700 : 400,
+        border: "1px solid",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.15s",
+        borderColor: active ? "#8B1A1A" : "rgba(201,168,76,0.25)",
+        background: active
+          ? "#8B1A1A"
+          : hovered && !disabled
+            ? "rgba(201,168,76,0.12)"
+            : "#fff",
+        color: active ? "#fff" : disabled ? "#C4B5A8" : "#1C1008",
+      }}
+    >
+      {children}
+    </button>
+  );
+};
+
 export default UserManager;
-
-

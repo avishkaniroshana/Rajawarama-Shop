@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
+  ClipboardList,
   Package,
   Users,
   Tags,
   Shirt,
   Footprints,
-  Settings,
+  Music2,
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -51,16 +52,32 @@ const AdminDashboard = () => {
       color: "from-red-500 to-pink-600",
       hoverBg: "hover:bg-red-50/70",
     },
+    {
+      title: "Special Packages Booking Management",
+      description: "Manage Special Package Booking Requests",
+      path: "/admin/booking-requests",
+      icon: <ClipboardList size={28} />,
+      color: "from-rose-500 to-red-600",
+      hoverBg: "hover:bg-rose-50/70",
+    },
+    {
+      title: "Dancing-Groups Booking Management",
+      description: "Manage Dancing Package Booking Requests",
+      path: "/admin/dancing-booking-requests",
+      icon: <Music2 size={28} />,
+      color: "from-violet-500 to-purple-600",
+      hoverBg: "hover:bg-violet-50/70",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 md:p-10">
       {/* Header */}
       <div className="mb-12 text-center md:text-left">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-600 via-gray-500 to-brown-600 tracking-tight drop-shadow-sm">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-600 via-gray-500 to-gray-800 tracking-tight drop-shadow-sm">
           Admin Dashboard
         </h1>
-        <p className="mt-4 text-xm text-gray-700 max-w-3xl mx-auto md:mx-0 leading-relaxed">
+        <p className="mt-4 text-sm text-gray-700 max-w-3xl mx-auto md:mx-0 leading-relaxed">
           Manage your entire platform from one central hub — Packages, Users,
           Categories, Dresses, and more.
         </p>
@@ -84,24 +101,22 @@ const AdminDashboard = () => {
             />
 
             <div className="p-8">
-              {/* Icon with gradient background */}
+              {/* Icon */}
               <div
                 className={`w-14 h-14 flex items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-lg transform group-hover:rotate-6 transition-transform duration-300`}
               >
                 {item.icon}
               </div>
 
-              {/* Title */}
               <h2 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-700 transition-colors duration-300">
                 {item.title}
               </h2>
 
-              {/* Description */}
               <p className="text-gray-600 text-base leading-relaxed">
                 {item.description}
               </p>
 
-              {/* Subtle arrow on hover */}
+              {/* Arrow on hover */}
               <div className="absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center text-white shadow-md text-lg font-bold">
                   →
@@ -112,7 +127,6 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Optional footer */}
       <div className="mt-16 text-center text-gray-500 text-sm">
         © {new Date().getFullYear()} Rajawarama Admin Panel
       </div>

@@ -2,7 +2,7 @@ import React from "react";
 import Header from "../components/common/Header/Header.jsx";
 import Footer from "../components/common/Footer/Footer.jsx";
 
-function MainLayout  ({ children }) {
+function MainLayout({ children }) {
   return (
     <>
       <Header />
@@ -10,6 +10,6 @@ function MainLayout  ({ children }) {
       <Footer />
     </>
   );
-};
+}
 
 export default MainLayout;

@@ -11,19 +11,68 @@ import { useNavigate } from "react-router-dom";
 
 const MySwal = withReactContent(Swal);
 
-// Zod schema
+const T = {
+  bg: "#FAF7F4",
+  surf: "#FFFFFF",
+  bdr: "rgba(201,168,76,0.22)",
+  gold: "#C9A84C",
+  goldBg: "rgba(201,168,76,0.10)",
+  red: "#8B1A1A",
+  redBg: "rgba(139,26,26,0.07)",
+  tx: "#1C1008",
+  muted: "#7A6555",
+  sub: "#C4B5A8",
+  green: "#15803D",
+  greenBg: "rgba(21,128,61,0.09)",
+};
+
 const specialPackageSchema = z.object({
   name: z.string().min(1, "Package name is required"),
   discountPercent: z
     .number({ invalid_type_error: "Discount is required" })
-    .min(0, "Discount cannot be negative")
-    .max(100, "Discount cannot exceed 100%")
+    .min(0)
+    .max(100)
     .optional()
     .default(0),
   weddingCoordinationIncluded: z.boolean().optional().default(false),
   weddingPackagingIncluded: z.boolean().optional().default(false),
   linkedDancingPackageId: z.string().uuid().nullable().optional(),
 });
+
+const inputStyle = {
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: 7,
+  border: `1px solid ${T.bdr}`,
+  outline: "none",
+  fontFamily: "'DM Sans',sans-serif",
+  fontSize: "0.82rem",
+  color: T.tx,
+  background: T.surf,
+  boxSizing: "border-box",
+};
+
+const Field = ({ label, required, error, children }) => (
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        color: T.muted,
+        marginBottom: 5,
+        letterSpacing: "0.03em",
+      }}
+    >
+      {label}
+      {required && <span style={{ color: T.red }}> *</span>}
+    </label>
+    {children}
+    {error && (
+      <p style={{ color: T.red, fontSize: "0.72rem", marginTop: 3 }}>{error}</p>
+    )}
+  </div>
+);
 
 const SpecialPackageManager = () => {
   const navigate = useNavigate();
@@ -32,18 +81,14 @@ const SpecialPackageManager = () => {
   const [specialItemTypes, setSpecialItemTypes] = useState([]);
   const [dancingPackages, setDancingPackages] = useState([]);
   const [dancingPerformerTypes, setDancingPerformerTypes] = useState([]);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [visibleIds, setVisibleIds] = useState({});
 
-  // Controlled state
-  const [selectedItems, setSelectedItems] = useState([]); // { specialItemTypeId, quantity }
-  const [freeCustomItems, setFreeCustomItems] = useState([]); // string[]
-  const [freeDancingPerformerIds, setFreeDancingPerformerIds] = useState([]); // UUID[]
-
-  // Preview totals (for modal)
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [freeCustomItems, setFreeCustomItems] = useState([]);
+  const [freeDancingPerformerIds, setFreeDancingPerformerIds] = useState([]);
   const [previewTotal, setPreviewTotal] = useState(0);
   const [previewDiscounted, setPreviewDiscounted] = useState(0);
 
@@ -65,7 +110,6 @@ const SpecialPackageManager = () => {
     },
   });
 
-  // Watch values for preview
   const discountPercent = watch("discountPercent") || 0;
   const weddingCoordinationIncluded = watch("weddingCoordinationIncluded");
   const weddingPackagingIncluded = watch("weddingPackagingIncluded");
@@ -75,62 +119,57 @@ const SpecialPackageManager = () => {
     fetchAllData();
   }, []);
 
-  // Sync coordination & packaging checkboxes
   useEffect(() => {
-    const coordinationType = specialItemTypes.find(
-      (t) => t.name.toLowerCase().includes("wedding coordination")
+    const coordinationType = specialItemTypes.find((t) =>
+      t.name.toLowerCase().includes("wedding coordination"),
     );
-    const packagingType = specialItemTypes.find(
-      (t) => t.name.toLowerCase().includes("wedding packaging")
+    const packagingType = specialItemTypes.find((t) =>
+      t.name.toLowerCase().includes("wedding packaging"),
     );
-
     let newSelectedItems = [...selectedItems];
-
     if (weddingCoordinationIncluded && coordinationType) {
-      if (!newSelectedItems.some((i) => i.specialItemTypeId === coordinationType.id)) {
+      if (
+        !newSelectedItems.some(
+          (i) => i.specialItemTypeId === coordinationType.id,
+        )
+      )
         newSelectedItems.push({
           specialItemTypeId: coordinationType.id,
           quantity: 1,
         });
-      }
     } else if (!weddingCoordinationIncluded && coordinationType) {
       newSelectedItems = newSelectedItems.filter(
-        (i) => i.specialItemTypeId !== coordinationType.id
+        (i) => i.specialItemTypeId !== coordinationType.id,
       );
     }
-
     if (weddingPackagingIncluded && packagingType) {
-      if (!newSelectedItems.some((i) => i.specialItemTypeId === packagingType.id)) {
+      if (
+        !newSelectedItems.some((i) => i.specialItemTypeId === packagingType.id)
+      )
         newSelectedItems.push({
           specialItemTypeId: packagingType.id,
           quantity: 1,
         });
-      }
     } else if (!weddingPackagingIncluded && packagingType) {
       newSelectedItems = newSelectedItems.filter(
-        (i) => i.specialItemTypeId !== packagingType.id
+        (i) => i.specialItemTypeId !== packagingType.id,
       );
     }
-
     setSelectedItems(newSelectedItems);
   }, [weddingCoordinationIncluded, weddingPackagingIncluded, specialItemTypes]);
 
-  // Real-time preview in modal
   useEffect(() => {
     let total = 0;
-
     selectedItems.forEach((item) => {
-      const type = specialItemTypes.find((t) => t.id === item.specialItemTypeId);
-      if (type) {
-        total += item.quantity * type.pricePerUnit;
-      }
+      const type = specialItemTypes.find(
+        (t) => t.id === item.specialItemTypeId,
+      );
+      if (type) total += item.quantity * type.pricePerUnit;
     });
-
-    const selectedDancePkg = dancingPackages.find((dp) => dp.id === linkedDancingPackageId);
-    if (selectedDancePkg && selectedDancePkg.totalPrice) {
-      total += selectedDancePkg.totalPrice;
-    }
-
+    const selectedDancePkg = dancingPackages.find(
+      (dp) => dp.id === linkedDancingPackageId,
+    );
+    if (selectedDancePkg?.totalPrice) total += selectedDancePkg.totalPrice;
     setPreviewTotal(total);
     setPreviewDiscounted(total * (1 - discountPercent / 100));
   }, [
@@ -149,12 +188,11 @@ const SpecialPackageManager = () => {
         api.get("/api/admin/dancing-package"),
         api.get("/api/admin/dancing-performer-types"),
       ]);
-
       setPackages(pkgRes.data || []);
       setSpecialItemTypes(itemRes.data || []);
       setDancingPackages(dancePkgRes.data || []);
       setDancingPerformerTypes(perfRes.data || []);
-    } catch (err) {
+    } catch {
       toastError("Failed to load required data");
     }
   };
@@ -164,14 +202,21 @@ const SpecialPackageManager = () => {
       setEditingPackage(pkg);
       setValue("name", pkg.name);
       setValue("discountPercent", pkg.discountPercent || 0);
-      setValue("weddingCoordinationIncluded", pkg.weddingCoordinationIncluded || false);
-      setValue("weddingPackagingIncluded", pkg.weddingPackagingIncluded || false);
+      setValue(
+        "weddingCoordinationIncluded",
+        pkg.weddingCoordinationIncluded || false,
+      );
+      setValue(
+        "weddingPackagingIncluded",
+        pkg.weddingPackagingIncluded || false,
+      );
       setValue("linkedDancingPackageId", pkg.linkedDancingPackageId || null);
-
       setSelectedItems(
         pkg.items
           ?.filter((i) => {
-            const type = specialItemTypes.find((t) => t.id === i.specialItemTypeId);
+            const type = specialItemTypes.find(
+              (t) => t.id === i.specialItemTypeId,
+            );
             return (
               type &&
               !type.name.toLowerCase().includes("wedding coordination") &&
@@ -181,15 +226,13 @@ const SpecialPackageManager = () => {
           ?.map((i) => ({
             specialItemTypeId: i.specialItemTypeId,
             quantity: i.quantity,
-          })) || []
+          })) || [],
       );
-
       setFreeCustomItems(
-        pkg.freeItems?.filter((name) => {
-          return !dancingPerformerTypes.some((p) => p.name === name);
-        }) || []
+        pkg.freeItems?.filter(
+          (name) => !dancingPerformerTypes.some((p) => p.name === name),
+        ) || [],
       );
-
       const freePerfIds = [];
       pkg.freeItems?.forEach((freeName) => {
         const match = dancingPerformerTypes.find((p) => p.name === freeName);
@@ -206,50 +249,44 @@ const SpecialPackageManager = () => {
     setModalOpen(true);
   };
 
-  const addPricedItem = () => {
-    setSelectedItems([...selectedItems, { specialItemTypeId: "", quantity: 1 }]);
-  };
-
+  const addPricedItem = () =>
+    setSelectedItems([
+      ...selectedItems,
+      { specialItemTypeId: "", quantity: 1 },
+    ]);
   const updatePricedItem = (index, field, value) => {
     const newItems = [...selectedItems];
     newItems[index][field] = field === "quantity" ? Number(value) : value;
     setSelectedItems(newItems);
   };
-
-  const removePricedItem = (index) => {
+  const removePricedItem = (index) =>
     setSelectedItems(selectedItems.filter((_, i) => i !== index));
-  };
 
   const addFreeCustom = () => setFreeCustomItems([...freeCustomItems, ""]);
   const updateFreeCustom = (index, value) => {
-    const newList = [...freeCustomItems];
-    newList[index] = value;
-    setFreeCustomItems(newList);
+    const n = [...freeCustomItems];
+    n[index] = value;
+    setFreeCustomItems(n);
   };
   const removeFreeCustom = (index) =>
     setFreeCustomItems(freeCustomItems.filter((_, i) => i !== index));
-
-  const toggleFreePerformer = (id) => {
+  const toggleFreePerformer = (id) =>
     setFreeDancingPerformerIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
-  };
 
   const onSubmit = async (data) => {
     setLoading(true);
-
     if (selectedItems.length === 0) {
       toastError("At least one priced item is required");
       setLoading(false);
       return;
     }
-
     if (selectedItems.some((i) => !i.specialItemTypeId)) {
       toastError("All priced items must have a type selected");
       setLoading(false);
       return;
     }
-
     try {
       const payload = {
         name: data.name.trim(),
@@ -264,15 +301,16 @@ const SpecialPackageManager = () => {
         freeItems: freeCustomItems.filter((s) => s.trim() !== ""),
         freeDancingPerformerTypeIds: freeDancingPerformerIds,
       };
-
       if (editingPackage) {
-        await api.put(`/api/admin/special-packages/${editingPackage.id}`, payload);
+        await api.put(
+          `/api/admin/special-packages/${editingPackage.id}`,
+          payload,
+        );
         toastSuccess("Special package updated");
       } else {
         await api.post("/api/admin/special-packages", payload);
         toastSuccess("Special package created");
       }
-
       setModalOpen(false);
       fetchAllData();
     } catch (err) {
@@ -286,155 +324,299 @@ const SpecialPackageManager = () => {
     const result = await MySwal.fire({
       title: "Delete Package?",
       text: "This action cannot be undone.",
-      icon: "warning",
+      icon: "error",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
+      confirmButtonColor: T.red,
       cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, delete",
     });
-
     if (result.isConfirmed) {
       try {
         await api.delete(`/api/admin/special-packages/${id}`);
         toastSuccess("Package deleted");
         fetchAllData();
-      } catch (err) {
+      } catch {
         toastError("Delete failed");
       }
     }
   };
 
-  const toggleIdVisibility = (id) => {
+  const toggleIdVisibility = (id) =>
     setVisibleIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 md:p-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            Special Packages
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Create premium bundles with discounts, free items & coordination
-          </p>
-          <br />
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={() => openModal()}
-              className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 hover:shadow-xl transition-all font-semibold transform hover:scale-105"
-            >
-              <Plus size={20} /> Add New Special Package
-            </button>
-
-            <button
-              onClick={() => navigate("/admin/special-item-types")}
-              className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl shadow-lg hover:bg-gray-900 hover:shadow-xl transition-all font-semibold transform hover:scale-105"
-            >
-              <Edit2 size={20} /> Manage Special Item Types
-            </button>
-          </div>
-        </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: T.bg,
+        padding: "28px 28px 60px",
+        fontFamily: "'DM Sans',sans-serif",
+      }}
+    >
+      <div style={{ marginBottom: 22 }}>
+        <h1
+          style={{
+            fontFamily: "'Cormorant Garamond',serif",
+            fontSize: "2rem",
+            fontWeight: 700,
+            color: T.tx,
+            margin: 0,
+          }}
+        >
+          Special <span style={{ color: T.red }}>Packages</span>
+        </h1>
+        <p
+          style={{
+            color: T.muted,
+            fontSize: "0.82rem",
+            marginTop: 4,
+            marginBottom: 0,
+          }}
+        >
+          Create premium bundles with discounts, free items & coordination
+        </p>
       </div>
 
-      {/* Table – with all requested columns */}
-      <div className="bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-              <tr>
-                {/* ID - narrow */}
-                <th className="w-32 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Special Package Id
-                </th>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))",
+          gap: 12,
+          marginBottom: 22,
+        }}
+      >
+        {[
+          { label: "Total Packages", value: packages.length, color: T.tx },
+          {
+            label: "With Discount",
+            value: packages.filter((p) => p.discountPercent > 0).length,
+            color: T.gold,
+          },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            style={{
+              background: T.surf,
+              border: `1px solid ${T.bdr}`,
+              borderRadius: 10,
+              padding: "14px 16px",
+              boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 4px 12px rgba(28,16,8,0.04)`,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond',serif",
+                fontSize: "1.9rem",
+                fontWeight: 700,
+                color,
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </div>
+            <div
+              style={{
+                fontSize: "0.63rem",
+                color: T.muted,
+                marginTop: 3,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        ))}
+      </div>
 
-                {/* Name - wider */}
-                <th className="w-64 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Name
-                </th>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => navigate("/admin/special-item-types")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "9px 16px",
+            background: T.surf,
+            color: T.muted,
+            border: `1px solid ${T.bdr}`,
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 500,
+          }}
+        >
+          <Edit2 size={14} /> Manage Special Item Types
+        </button>
+        <button
+          onClick={() => openModal()}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "9px 18px",
+            background: T.red,
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 600,
+            letterSpacing: "0.04em",
+            boxShadow: `0 2px 8px rgba(139,26,26,0.18)`,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Plus size={15} /> Add New Special Package
+        </button>
+      </div>
 
-                {/* Description - widest */}
-                <th className="w-96 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Description
-                </th>
-
-                {/* Price without discount - narrow */}
-                <th className="w-40 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Price
-                </th>
-
-                {/* Discount Percentage - very narrow */}
-                <th className="w-32 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Discount %
-                </th>
-
-                {/* Total Price with discount - narrow */}
-                <th className="w-40 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Discounted Price
-                </th>
-
-                {/* Actions - fixed narrow */}
-                <th className="w-32 px-6 py-5 text-left text-sm font-bold text-gray-700">
-                  Actions
-                </th>
+      {/* ------------ TABLE  */}
+      <div
+        style={{
+          background: T.surf,
+          border: `1px solid ${T.bdr}`,
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: `0 2px 0 rgba(201,168,76,0.08),0 6px 20px rgba(28,16,8,0.04)`,
+        }}
+      >
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.78rem",
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  background: `linear-gradient(90deg,${T.goldBg},rgba(201,168,76,0.05))`,
+                  borderBottom: `1px solid ${T.bdr}`,
+                }}
+              >
+                <Th style={{ width: 130 }}>Package ID</Th>
+                <Th style={{ width: 200 }}>Name</Th>
+                <Th>Description</Th>
+                <Th style={{ width: 140 }}>Price (LKR)</Th>
+                <Th style={{ width: 100 }}>Discount %</Th>
+                <Th style={{ width: 160 }}>Discounted Price</Th>
+                <Th style={{ width: 110 }}>Actions</Th>
               </tr>
             </thead>
-
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody>
               {packages.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-8 py-16 text-center text-gray-600 text-lg font-medium"
+                    style={{
+                      padding: "40px 16px",
+                      textAlign: "center",
+                      color: T.muted,
+                      fontSize: "0.85rem",
+                    }}
                   >
-                    No special packages found.
+                    No special packages found. Add your first package above.
                   </td>
                 </tr>
               ) : (
-                packages.map((pkg) => {
-                  // Calculate price without discount (reverse from finalPrice + discount)
+                packages.map((pkg, idx) => {
                   const priceWithoutDiscount =
                     pkg.finalPrice && pkg.discountPercent
                       ? pkg.finalPrice / (1 - pkg.discountPercent / 100)
                       : pkg.finalPrice || 0;
-
                   return (
                     <tr
                       key={pkg.id}
-                      className="hover:bg-indigo-50/50 transition-colors"
+                      style={{
+                        borderBottom: `1px solid rgba(201,168,76,0.10)`,
+                        background: idx % 2 === 0 ? T.surf : "#FDFBF8",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = T.goldBg)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background =
+                          idx % 2 === 0 ? T.surf : "#FDFBF8")
+                      }
                     >
-                      {/* ID column */}
-                      <td className="px-6 py-6 text-gray-600 font-mono text-sm">
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          verticalAlign: "middle",
+                          fontSize: "0.78rem",
+                        }}
+                      >
                         {!visibleIds[pkg.id] ? (
                           <button
                             onClick={() => toggleIdVisibility(pkg.id)}
-                            className="text-indigo-600 hover:text-indigo-800 underline text-sm"
+                            style={{
+                              color: T.gold,
+                              fontSize: "0.72rem",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
                           >
-                            Show ID
+                            Show
                           </button>
                         ) : (
                           <>
                             <button
                               onClick={() => toggleIdVisibility(pkg.id)}
-                              className="text-indigo-600 hover:text-indigo-800 underline text-sm"
+                              style={{
+                                color: T.gold,
+                                fontSize: "0.72rem",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
                             >
-                              Hide ID
+                              Hide
                             </button>
-                            <div className="mt-2 break-all text-gray-500 text-xs">
+                            <div
+                              style={{
+                                marginTop: 3,
+                                wordBreak: "break-all",
+                                color: T.muted,
+                                fontSize: "0.68rem",
+                                fontFamily: "monospace",
+                                maxWidth: 120,
+                              }}
+                            >
                               {pkg.id}
                             </div>
                           </>
                         )}
                       </td>
-
-                      {/* Name - wider */}
-                      <td className="px-6 py-6 font-medium text-gray-900">
-                        {pkg.name}
-                      </td>
-
-                      {/* Description - widest */}
-                      <td className="px-6 py-6 text-gray-600 whitespace-pre-line text-sm leading-relaxed w-96">
+                      <Td>
+                        <span style={{ fontWeight: 500, color: T.tx }}>
+                          {pkg.name}
+                        </span>
+                      </Td>
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          verticalAlign: "middle",
+                          fontSize: "0.75rem",
+                          color: T.muted,
+                          maxWidth: 300,
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {pkg.description
                           ? pkg.description.split("\n").map((line, i) => {
                               const trimmed = line.trim();
@@ -442,61 +624,80 @@ const SpecialPackageManager = () => {
                                 trimmed === "Includes:" ||
                                 trimmed === "Free items:" ||
                                 trimmed.startsWith("Total estimated value:");
-
                               return (
                                 <div
                                   key={i}
-                                  className={
-                                    isBold ? "font-semibold text-gray-900" : ""
-                                  }
+                                  style={{
+                                    fontWeight: isBold ? 600 : 400,
+                                    color: isBold ? T.tx : T.muted,
+                                  }}
                                 >
                                   {trimmed.startsWith("•") ? (
-                                    <span className="inline-block ml-2">
+                                    <span style={{ paddingLeft: 8 }}>
                                       {line}
                                     </span>
                                   ) : (
-                                    line
+                                    trimmed
                                   )}
                                 </div>
                               );
                             })
                           : "—"}
                       </td>
-
-                      {/* Price without discount - narrow */}
-                      <td className="px-6 py-6 text-gray-700 font-semibold whitespace-nowrap">
-                        Rs. {priceWithoutDiscount.toLocaleString("en-LK")}
-                      </td>
-
-                      {/* Discount Percentage - narrow */}
-                      <td className="px-6 py-6 text-gray-700 whitespace-nowrap">
-                        {pkg.discountPercent}%
-                      </td>
-
-                      {/* Total Price with discount - narrow */}
-                      <td className="px-6 py-6 text-gray-700 font-semibold whitespace-nowrap">
-                        Rs. {pkg.finalPrice?.toLocaleString("en-LK") || "—"}
-                      </td>
-
-                      {/* Actions - narrow */}
-                      <td className="px-6 py-6">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => openModal(pkg)}
-                            className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition shadow-sm"
+                      <Td>
+                        <span style={{ fontWeight: 600, color: T.tx }}>
+                          Rs. {priceWithoutDiscount.toLocaleString("en-LK")}
+                        </span>
+                      </Td>
+                      <Td>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 9px",
+                            borderRadius: 40,
+                            fontSize: "0.68rem",
+                            fontWeight: 600,
+                            background: T.goldBg,
+                            color: T.gold,
+                            border: `1px solid rgba(201,168,76,0.35)`,
+                          }}
+                        >
+                          {pkg.discountPercent}%
+                        </span>
+                      </Td>
+                      <Td>
+                        <span style={{ fontWeight: 700, color: T.red }}>
+                          Rs. {pkg.finalPrice?.toLocaleString("en-LK") || "—"}
+                        </span>
+                      </Td>
+                      <Td>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 6,
+                            alignItems: "center",
+                          }}
+                        >
+                          <ActionBtn
                             title="Edit"
+                            bg="rgba(201,168,76,0.12)"
+                            color={T.gold}
+                            hoverBg="rgba(201,168,76,0.24)"
+                            onClick={() => openModal(pkg)}
                           >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(pkg.id)}
-                            className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow-sm"
+                            <Edit2 size={13} />
+                          </ActionBtn>
+                          <ActionBtn
                             title="Delete"
+                            bg={T.redBg}
+                            color={T.red}
+                            hoverBg="rgba(139,26,26,0.15)"
+                            onClick={() => handleDelete(pkg.id)}
                           >
-                            <Trash2 size={18} />
-                          </button>
+                            <Trash2 size={13} />
+                          </ActionBtn>
                         </div>
-                      </td>
+                      </Td>
                     </tr>
                   );
                 })
@@ -506,107 +707,182 @@ const SpecialPackageManager = () => {
         </div>
       </div>
 
-      {/* Modal – with live preview */}
+      {/* -------------------------------- MODAL  */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 w-full max-w-5xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-100">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(28,10,0,0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: T.surf,
+              borderRadius: 16,
+              border: `1px solid ${T.bdr}`,
+              boxShadow: "0 24px 64px rgba(28,10,0,0.22)",
+              width: "100%",
+              maxWidth: 780,
+              maxHeight: "92vh",
+              overflowY: "auto",
+            }}
+          >
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 22px",
+                borderBottom: `1px solid ${T.bdr}`,
+                position: "sticky",
+                top: 0,
+                background: T.surf,
+                zIndex: 10,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Cormorant Garamond',serif",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: T.tx,
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 {editingPackage ? (
                   <>
-                    <Edit2 size={24} className="text-indigo-600" /> Edit Special
-                    Package
+                    <Edit2 size={18} color={T.gold} /> Edit Special Package
                   </>
                 ) : (
                   <>
-                    <Plus size={24} className="text-indigo-600" /> Create
-                    Special Package
+                    <Plus size={18} color={T.gold} /> Create Special Package
                   </>
                 )}
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: T.muted,
+                  padding: 4,
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                }}
               >
-                <X size={24} className="text-gray-600 hover:text-gray-900" />
+                <X size={20} />
               </button>
             </div>
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="px-8 py-8 space-y-8"
+              style={{
+                padding: "20px 22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 18,
+              }}
             >
               {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Package Name <span className="text-red-500">*</span>
-                  </label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                }}
+              >
+                <Field
+                  label="Package Name"
+                  required
+                  error={errors.name?.message}
+                >
                   <input
                     {...register("name")}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="Enter special package name here"
+                    placeholder="Enter special package name"
+                    style={inputStyle}
                   />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Discount (%)
-                  </label>
+                </Field>
+                <Field
+                  label="Discount (%)"
+                  error={errors.discountPercent?.message}
+                >
                   <input
                     type="number"
                     step="0.5"
                     {...register("discountPercent", { valueAsNumber: true })}
-                    className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all"
-                    placeholder="0 - 100"
+                    placeholder="0 – 100"
+                    style={inputStyle}
                   />
-                  {errors.discountPercent && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.discountPercent.message}
-                    </p>
-                  )}
-                </div>
+                </Field>
               </div>
 
               {/* Checkboxes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    {...register("weddingCoordinationIncluded")}
-                    className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                  />
-                  <span className="text-gray-700 font-medium">
-                    Wedding Coordination Included
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    {...register("weddingPackagingIncluded")}
-                    className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                  />
-                  <span className="text-gray-700 font-medium">
-                    Wedding Packaging Included
-                  </span>
-                </label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                }}
+              >
+                {[
+                  {
+                    field: "weddingCoordinationIncluded",
+                    label: "Wedding Coordination Included",
+                  },
+                  {
+                    field: "weddingPackagingIncluded",
+                    label: "Wedding Packaging Included",
+                  },
+                ].map(({ field, label }) => (
+                  <label
+                    key={field}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 14px",
+                      border: `1px solid ${T.bdr}`,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      background: T.goldBg,
+                      fontSize: "0.82rem",
+                      fontWeight: 500,
+                      color: T.tx,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      {...register(field)}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        accentColor: T.red,
+                        cursor: "pointer",
+                      }}
+                    />
+                    {label}
+                  </label>
+                ))}
               </div>
 
               {/* Linked Dancing Package */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Link to Dancing Package (optional)
-                </label>
+              <Field label="Link to Dancing Package (optional)">
                 <select
                   {...register("linkedDancingPackageId")}
-                  className="w-full px-5 py-3.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 outline-none transition-all bg-white"
+                  style={inputStyle}
                 >
                   <option value="">— None —</option>
                   {dancingPackages.map((dp) => (
@@ -616,29 +892,69 @@ const SpecialPackageManager = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               {/* Priced Items */}
-              <div className="border-t pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
+              <div style={{ borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: T.muted,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
                     Priced Items *
-                  </h3>
+                  </span>
                   <button
                     type="button"
                     onClick={addPricedItem}
-                    className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 14px",
+                      background: T.goldBg,
+                      color: T.gold,
+                      border: `1px solid rgba(201,168,76,0.35)`,
+                      borderRadius: 7,
+                      cursor: "pointer",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                    }}
                   >
-                    <Plus size={18} /> Add Item
+                    <Plus size={13} /> Add Item
                   </button>
                 </div>
-
                 {selectedItems.length === 0 ? (
-                  <p className="text-gray-500 italic text-center py-6">
-                    Add at least one priced item - (Press "Add Item" button)
+                  <p
+                    style={{
+                      color: T.sub,
+                      fontStyle: "italic",
+                      fontSize: "0.82rem",
+                      textAlign: "center",
+                      padding: "16px 0",
+                    }}
+                  >
+                    Add at least one priced item — press "Add Item" above
                   </p>
                 ) : (
-                  <div className="space-y-4">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    }}
+                  >
                     {selectedItems.map((item, index) => {
                       const type = specialItemTypes.find(
                         (t) => t.id === item.specialItemTypeId,
@@ -648,17 +964,31 @@ const SpecialPackageManager = () => {
                           .toLowerCase()
                           .includes("wedding coordination") ||
                         type?.name.toLowerCase().includes("wedding packaging")
-                      ) {
+                      )
                         return null;
-                      }
-
                       return (
                         <div
                           key={index}
-                          className="flex flex-col sm:flex-row gap-4 items-end bg-gray-50 p-4 rounded-xl border"
+                          style={{
+                            display: "flex",
+                            gap: 10,
+                            alignItems: "flex-end",
+                            background: T.goldBg,
+                            padding: "12px 14px",
+                            borderRadius: 10,
+                            border: `1px solid ${T.bdr}`,
+                          }}
                         >
-                          <div className="flex-1">
-                            <label className="block text-sm text-gray-700 mb-1.5">
+                          <div style={{ flex: 1 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: "0.72rem",
+                                fontWeight: 600,
+                                color: T.muted,
+                                marginBottom: 4,
+                              }}
+                            >
                               Item Type
                             </label>
                             <select
@@ -670,9 +1000,9 @@ const SpecialPackageManager = () => {
                                   e.target.value,
                                 )
                               }
-                              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none"
+                              style={inputStyle}
                             >
-                              <option value="">Select item type...</option>
+                              <option value="">Select item type…</option>
                               {specialItemTypes.map((t) => (
                                 <option key={t.id} value={t.id}>
                                   {t.name} – Rs.{" "}
@@ -681,9 +1011,16 @@ const SpecialPackageManager = () => {
                               ))}
                             </select>
                           </div>
-
-                          <div className="w-32">
-                            <label className="block text-sm text-gray-700 mb-1.5">
+                          <div style={{ width: 100 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: "0.72rem",
+                                fontWeight: 600,
+                                color: T.muted,
+                                marginBottom: 4,
+                              }}
+                            >
                               Quantity
                             </label>
                             <input
@@ -697,16 +1034,27 @@ const SpecialPackageManager = () => {
                                   e.target.value,
                                 )
                               }
-                              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-center"
+                              style={{ ...inputStyle, textAlign: "center" }}
                             />
                           </div>
-
                           <button
                             type="button"
                             onClick={() => removePricedItem(index)}
-                            className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 34,
+                              height: 34,
+                              borderRadius: 8,
+                              border: "none",
+                              background: T.redBg,
+                              color: T.red,
+                              cursor: "pointer",
+                              flexShrink: 0,
+                            }}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       );
@@ -716,24 +1064,88 @@ const SpecialPackageManager = () => {
               </div>
 
               {/* Live Preview */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
-                <h4 className="text-base font-semibold text-gray-800 mb-3">
+              <div
+                style={{
+                  background: T.goldBg,
+                  border: `1px solid ${T.bdr}`,
+                  borderRadius: 10,
+                  padding: "14px 16px",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: T.muted,
+                    margin: "0 0 10px",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
                   Live Preview (before save)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-lg border">
-                    <p className="text-sm text-gray-600">
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      background: T.surf,
+                      borderRadius: 8,
+                      padding: "12px 14px",
+                      border: `1px solid ${T.bdr}`,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "0.72rem",
+                        color: T.muted,
+                        margin: "0 0 4px",
+                      }}
+                    >
                       Price (Without Discount)
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p
+                      style={{
+                        fontSize: "1.4rem",
+                        fontWeight: 700,
+                        color: T.tx,
+                        margin: 0,
+                        fontFamily: "'Cormorant Garamond',serif",
+                      }}
+                    >
                       Rs. {previewTotal.toLocaleString("en-LK")}
                     </p>
                   </div>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <p className="text-sm text-gray-600">
+                  <div
+                    style={{
+                      background: T.surf,
+                      borderRadius: 8,
+                      padding: "12px 14px",
+                      border: `1px solid ${T.bdr}`,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "0.72rem",
+                        color: T.muted,
+                        margin: "0 0 4px",
+                      }}
+                    >
                       Total Price (With {discountPercent}% Discount)
                     </p>
-                    <p className="text-2xl font-bold text-indigo-700">
+                    <p
+                      style={{
+                        fontSize: "1.4rem",
+                        fontWeight: 700,
+                        color: T.red,
+                        margin: 0,
+                        fontFamily: "'Cormorant Garamond',serif",
+                      }}
+                    >
                       Rs. {previewDiscounted.toLocaleString("en-LK")}
                     </p>
                   </div>
@@ -741,31 +1153,78 @@ const SpecialPackageManager = () => {
               </div>
 
               {/* Free Items */}
-              <div className="border-t pt-6 space-y-8">
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div
+                style={{
+                  borderTop: `1px solid ${T.bdr}`,
+                  paddingTop: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: T.muted,
+                    margin: 0,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
                   Free Items (Optional)
-                </h3>
+                </p>
 
                 {/* Custom Free Items */}
                 <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Custom Free Items (If you want to add free items that are
-                      not in the priced item list or dancing performers)
-                    </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <span style={{ fontSize: "0.78rem", color: T.muted }}>
+                      Custom Free Items
+                    </span>
                     <button
                       type="button"
                       onClick={addFreeCustom}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "5px 12px",
+                        background: T.greenBg,
+                        color: T.green,
+                        border: `1px solid rgba(21,128,61,0.25)`,
+                        borderRadius: 7,
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                      }}
                     >
-                      <Plus size={16} /> Add Custom
+                      <Plus size={13} /> Add Custom
                     </button>
                   </div>
-
                   {freeCustomItems.length > 0 && (
-                    <div className="space-y-3">
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
                       {freeCustomItems.map((item, idx) => (
-                        <div key={idx} className="flex gap-3 items-center">
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
                           <input
                             type="text"
                             value={item}
@@ -773,14 +1232,26 @@ const SpecialPackageManager = () => {
                               updateFreeCustom(idx, e.target.value)
                             }
                             placeholder="e.g. Traditional oil lamp"
-                            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none"
+                            style={{ ...inputStyle, flex: 1 }}
                           />
                           <button
                             type="button"
                             onClick={() => removeFreeCustom(idx)}
-                            className="p-3 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 32,
+                              height: 32,
+                              borderRadius: 8,
+                              border: "none",
+                              background: T.redBg,
+                              color: T.red,
+                              cursor: "pointer",
+                              flexShrink: 0,
+                            }}
                           >
-                            <X size={18} />
+                            <X size={14} />
                           </button>
                         </div>
                       ))}
@@ -790,29 +1261,67 @@ const SpecialPackageManager = () => {
 
                 {/* Free Dancing Performers */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <p
+                    style={{
+                      fontSize: "0.78rem",
+                      color: T.muted,
+                      margin: "0 0 10px",
+                    }}
+                  >
                     Free Dancing Performer Types
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2">
+                  </p>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill,minmax(260px,1fr))",
+                      gap: 8,
+                      maxHeight: 200,
+                      overflowY: "auto",
+                      paddingRight: 4,
+                    }}
+                  >
                     {dancingPerformerTypes.map((perf) => (
                       <label
                         key={perf.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                          freeDancingPerformerIds.includes(perf.id)
-                            ? "bg-indigo-50 border-indigo-400"
-                            : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                        }`}
+                        onClick={() => toggleFreePerformer(perf.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          border: `1px solid ${freeDancingPerformerIds.includes(perf.id) ? T.gold : T.bdr}`,
+                          background: freeDancingPerformerIds.includes(perf.id)
+                            ? T.goldBg
+                            : T.surf,
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
                       >
                         <input
                           type="checkbox"
                           checked={freeDancingPerformerIds.includes(perf.id)}
-                          onChange={() => toggleFreePerformer(perf.id)}
-                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                          onChange={() => {}}
+                          style={{
+                            width: 15,
+                            height: 15,
+                            accentColor: T.red,
+                            cursor: "pointer",
+                          }}
                         />
                         <div>
-                          <div className="font-medium">{perf.name}</div>
-                          <div className="text-sm text-gray-600">
-                            Rs. {perf.pricePerUnit?.toLocaleString("en-LK")} •
+                          <div
+                            style={{
+                              fontWeight: 500,
+                              fontSize: "0.78rem",
+                              color: T.tx,
+                            }}
+                          >
+                            {perf.name}
+                          </div>
+                          <div style={{ fontSize: "0.68rem", color: T.muted }}>
+                            Rs. {perf.pricePerUnit?.toLocaleString("en-LK")} ·
                             Max: {perf.maxAvailable}
                           </div>
                         </div>
@@ -822,59 +1331,96 @@ const SpecialPackageManager = () => {
                 </div>
               </div>
 
-              {/* Buttons */}
-
-              <div className="flex justify-end gap-5 pt-6 border-t border-gray-200 mt-6">
-                
-                  {/* Cancel – closes modal */}
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="px-10 py-3.5 rounded-xl border border-gray-500 text-gray-700 hover:bg-gray-200 transition font-medium shadow-sm"
-                  >
-                    Cancel
-                  </button>
-
-                  {/* Clear button – resets form but keeps modal open */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      reset();
-                      setSelectedItems([]);
-                      setFreeCustomItems([]);
-                      setFreeDancingPerformerIds([]);
-                      setValue("name", "");
-                      setValue("discountPercent", 0);
-                      setValue("weddingCoordinationIncluded", false);
-                      setValue("weddingPackagingIncluded", false);
-                      setValue("linkedDancingPackageId", null);
-                    }}
-                    className="px-10 py-3.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
-                  >
-                    Clear
-                  </button>
-
-                  {/* Submit button */}
-                  <button
-                    type="submit"
-                    disabled={loading || isSubmitting}
-                    className={`px-12 py-3.5 rounded-xl font-semibold text-white shadow-xl flex items-center gap-3 transition-all ${
+              {/* Footer Buttons */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                  paddingTop: 14,
+                  borderTop: `1px solid ${T.bdr}`,
+                  marginTop: 4,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: 8,
+                    border: `1px solid ${T.bdr}`,
+                    background: T.surf,
+                    color: T.muted,
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reset();
+                    setSelectedItems([]);
+                    setFreeCustomItems([]);
+                    setFreeDancingPerformerIds([]);
+                    setValue("name", "");
+                    setValue("discountPercent", 0);
+                    setValue("weddingCoordinationIncluded", false);
+                    setValue("weddingPackagingIncluded", false);
+                    setValue("linkedDancingPackageId", null);
+                  }}
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: 8,
+                    border: `1px solid ${T.bdr}`,
+                    background: T.surf,
+                    color: T.muted,
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Clear
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || isSubmitting}
+                  style={{
+                    padding: "9px 24px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: loading || isSubmitting ? "not-allowed" : "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    background:
                       loading || isSubmitting
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 hover:shadow-2xl"
-                    }`}
-                  >
-                    {loading || isSubmitting ? (
-                      <>
-                        <Loader2 size={18} className="animate-spin" /> Saving...
-                      </>
-                    ) : editingPackage ? (
-                      "Update Package"
-                    ) : (
-                      "Create Package"
-                    )}
-                  </button>
-                </div>
+                        ? "#aaa"
+                        : editingPackage
+                          ? "linear-gradient(135deg,#C9A84C,#E2C56A)"
+                          : T.red,
+                    boxShadow:
+                      loading || isSubmitting
+                        ? "none"
+                        : "0 2px 10px rgba(139,26,26,0.22)",
+                  }}
+                >
+                  {loading || isSubmitting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Saving…
+                    </>
+                  ) : editingPackage ? (
+                    "Update Package"
+                  ) : (
+                    "Create Package"
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -883,5 +1429,63 @@ const SpecialPackageManager = () => {
   );
 };
 
+const Th = ({ children, style }) => (
+  <th
+    style={{
+      padding: "10px 12px",
+      textAlign: "left",
+      fontSize: "0.70rem",
+      fontWeight: 700,
+      color: "#7A6555",
+      letterSpacing: "0.10em",
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+      ...style,
+    }}
+  >
+    {children}
+  </th>
+);
+const Td = ({ children }) => (
+  <td
+    style={{
+      padding: "9px 12px",
+      verticalAlign: "middle",
+      fontSize: "0.78rem",
+      color: "#1C1008",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {children}
+  </td>
+);
+const ActionBtn = ({ children, title, bg, color, hoverBg, onClick }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 28,
+        height: 28,
+        borderRadius: 6,
+        border: "none",
+        cursor: "pointer",
+        transition: "background 0.15s",
+        background: hovered ? hoverBg : bg,
+        color,
+      }}
+    >
+      {children}
+    </button>
+  );
+};
+
 export default SpecialPackageManager;
+
 

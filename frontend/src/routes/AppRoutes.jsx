@@ -1,4 +1,9 @@
 import { Routes, Route } from "react-router-dom";
+import MainLayout from "../layouts/MainLayout";
+import AdminLayout from "../layouts/AdminLayout";
+import RoleBasedProfileLayout from "../layouts/RoleBasedProfileLayout";
+
+// Pages
 import Home from "../pages/Home";
 import Services from "../pages/Services";
 import Contact from "../pages/Contact";
@@ -7,7 +12,7 @@ import SignUp from "../pages/SignUp";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
 
-// ---------------------------------------- Service sub-pages 
+// Service sub-pages
 import SpecialPackages from "../pages/services/SpecialPackages";
 import DancingGroup from "../pages/services/DancingGroup";
 import DressItems from "../pages/services/DressItems";
@@ -16,9 +21,6 @@ import DressItems from "../pages/services/DressItems";
 import SpecialPackageBooking from "../pages/booking/SpecialPackageBooking";
 import DancingPackageBooking from "../pages/booking/DancingPackageBooking";
 import MyBookings from "../pages/booking/MyBooking";
-
-import ProtectedRoute from "./ProtectedRoutes";
-import AdminProtectedRoute from "./AdminProtectedRoute";
 
 // Admin pages
 import AdminDashboard from "../pages/AdminDashboard";
@@ -32,70 +34,118 @@ import SpecialItemTypeManager from "../components/admin/SpecialItemTypeManager";
 import BookingRequestsManager from "../components/admin/BookingRequestsManager";
 import DancingBookingRequestsManager from "../components/admin/DancingBookingRequestsManager";
 
+import ProtectedRoute from "./ProtectedRoutes";
+import AdminProtectedRoute from "./AdminProtectedRoute";
+
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* ── Public Routes ── */}
-      <Route path="/" element={<Home />} />
-      <Route path="/services" element={<Services />} />
-      <Route path="/contact" element={<Contact />} />
+      {/* ------------------------ Public Routes  */}
+      <Route
+        path="/"
+        element={
+          <MainLayout>
+            <Home />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/services"
+        element={
+          <MainLayout>
+            <Services />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <MainLayout>
+            <Contact />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/services/special"
+        element={
+          <MainLayout>
+            <SpecialPackages />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/services/dancing-group"
+        element={
+          <MainLayout>
+            <DancingGroup />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/services/dress-items"
+        element={
+          <MainLayout>
+            <DressItems />
+          </MainLayout>
+        }
+      />
+
+      {/* ------------------------ Auth Routes  */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
 
-      {/* ── Service Sub-pages (matches Header nav links) ── */}
-      <Route path="/services/special" element={<SpecialPackages />} />
-      <Route path="/services/dancing-group" element={<DancingGroup />} />
-      <Route path="/services/dress-items" element={<DressItems />} />
-
-      {/* ── Protected User Routes ── */}
+      {/* ------------------------- Protected: Profile (layout depends on role)  */}
       <Route
         path="/profile"
         element={
           <ProtectedRoute>
-            <Profile />
+            <RoleBasedProfileLayout>
+              <Profile />
+            </RoleBasedProfileLayout>
           </ProtectedRoute>
         }
       />
+
+      {/* ------------------------- Protected: Customer Bookings  */}
       <Route
         path="/booking/special-packages"
         element={
           <ProtectedRoute>
-            <SpecialPackageBooking />
+            <MainLayout>
+              <SpecialPackageBooking />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/booking/dancing-packages"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <DancingPackageBooking />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/my-bookings"
         element={
           <ProtectedRoute>
-            <MyBookings />
+            <MainLayout>
+              <MyBookings />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* ── Protected Admin Routes ── */}
+      {/* -------------------------------- Admin Routes  */}
       <Route
         path="/admin/dashboard"
         element={
           <AdminProtectedRoute>
-            <AdminDashboard />
-          </AdminProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/special-packages"
-        element={
-          <AdminProtectedRoute>
-            <SpecialPackageManager />
-          </AdminProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/dancing-packages"
-        element={
-          <AdminProtectedRoute>
-            <DancingPackageManager />
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
@@ -103,7 +153,9 @@ const AppRoutes = () => {
         path="/admin/users"
         element={
           <AdminProtectedRoute>
-            <UserManager />
+            <AdminLayout>
+              <UserManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
@@ -111,7 +163,9 @@ const AppRoutes = () => {
         path="/admin/categories"
         element={
           <AdminProtectedRoute>
-            <CategoryManager />
+            <AdminLayout>
+              <CategoryManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
@@ -119,7 +173,9 @@ const AppRoutes = () => {
         path="/admin/dress-items"
         element={
           <AdminProtectedRoute>
-            <DressItemsManager />
+            <AdminLayout>
+              <DressItemsManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
@@ -127,7 +183,9 @@ const AppRoutes = () => {
         path="/admin/dancing-performer-types"
         element={
           <AdminProtectedRoute>
-            <DancingPerformerTypeManager />
+            <AdminLayout>
+              <DancingPerformerTypeManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
@@ -135,41 +193,54 @@ const AppRoutes = () => {
         path="/admin/special-item-types"
         element={
           <AdminProtectedRoute>
-            <SpecialItemTypeManager />
+            <AdminLayout>
+              <SpecialItemTypeManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
-
-      {/* Admin: Booking Special Requests */}
+      <Route
+        path="/admin/dancing-packages"
+        element={
+          <AdminProtectedRoute>
+            <AdminLayout>
+              <DancingPackageManager />
+            </AdminLayout>
+          </AdminProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/special-packages"
+        element={
+          <AdminProtectedRoute>
+            <AdminLayout>
+              <SpecialPackageManager />
+            </AdminLayout>
+          </AdminProtectedRoute>
+        }
+      />
       <Route
         path="/admin/booking-requests"
         element={
           <AdminProtectedRoute>
-            <BookingRequestsManager />
+            <AdminLayout>
+              <BookingRequestsManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
-
-      {/* Customer: Dancing Package Booking */}
-      <Route
-        path="/booking/dancing-packages"
-        element={
-          <ProtectedRoute>
-            <DancingPackageBooking />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Admin: Dancing Package Booking Requests */}
       <Route
         path="/admin/dancing-booking-requests"
         element={
           <AdminProtectedRoute>
-            <DancingBookingRequestsManager />
+            <AdminLayout>
+              <DancingBookingRequestsManager />
+            </AdminLayout>
           </AdminProtectedRoute>
         }
       />
 
+{/*Catch-all for 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

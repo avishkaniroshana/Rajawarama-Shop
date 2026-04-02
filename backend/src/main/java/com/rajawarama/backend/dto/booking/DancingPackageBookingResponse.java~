@@ -27,7 +27,7 @@ public class DancingPackageBookingResponse {
     private String dancingPackageName;
     private Double dancingPackageBasePrice;  // stored totalPrice of the package at booking time
 
-    // ------------------STORED PRICES (from DB columns)
+    // ── STORED PRICES (from DB columns) ──────────────────────────────────────
     // bookingSubtotal = dancingPackage.totalPrice + extraPerformers total
     // Calculated once at creation and stored — never recalculated on read.
     private Double bookingSubtotal;

@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
-// FILE: src/main/java/com/rajawarama/backend/dto/booking/SpecialPackageBookingResponse.java
-// ═══════════════════════════════════════════════════════════════════
+// PATH: src/main/java/com/rajawarama/backend/dto/booking/SpecialPackageBookingResponse.java
 
 package com.rajawarama.backend.dto.booking;
 
@@ -30,7 +28,16 @@ public class SpecialPackageBookingResponse {
     // Special package info
     private UUID specialPackageId;
     private String specialPackageName;
-    private Double specialPackageFinalPrice;
+    private Double specialPackageFinalPrice;   // base package price (always the original)
+
+    // ----------- STORED PRICES (from DB columns)
+    // bookingSubtotal = specialPkg.finalPrice + dancingAdj + extraPerformers
+    // Calculated once at creation and stored — never recalculated on read.
+    private Double bookingSubtotal;
+
+    // grandTotal = bookingSubtotal + transportPrice
+    // Stored when admin sets transport price. Null until then.
+    private Double grandTotal;
 
     // Event details
     private String hotelName;
@@ -59,7 +66,7 @@ public class SpecialPackageBookingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // ── Nested response classes ──────────────────────────────────────
+    // -------------------------------- Nested response classes
 
     @Getter
     @Builder
@@ -78,6 +85,7 @@ public class SpecialPackageBookingResponse {
         private UUID id;
         private String name;
         private Double totalPrice;
+        private String description;
     }
 
     @Getter
@@ -90,3 +98,5 @@ public class SpecialPackageBookingResponse {
         private Integer quantity;
     }
 }
+
+

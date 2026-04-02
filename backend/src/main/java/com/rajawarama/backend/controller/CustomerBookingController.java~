@@ -65,5 +65,4 @@ public class CustomerBookingController {
     ) {
         return ResponseEntity.ok(bookingService.acceptPrice(getEmail(), requestId));
     }
-
 }

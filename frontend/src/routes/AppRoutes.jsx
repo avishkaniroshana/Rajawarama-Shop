@@ -1,17 +1,26 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Services from "../pages/Services";
-import Packages from "../pages/Packages";
-import Booking from "../pages/Booking";
 import Contact from "../pages/Contact";
 import SignIn from "../pages/SignIn";
 import SignUp from "../pages/SignUp";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
 
+// ---------------------------------------- Service sub-pages 
+import SpecialPackages from "../pages/services/SpecialPackages";
+import DancingGroup from "../pages/services/DancingGroup";
+import DressItems from "../pages/services/DressItems";
+
+// Booking pages
+import SpecialPackageBooking from "../pages/booking/SpecialPackageBooking";
+import DancingPackageBooking from "../pages/booking/DancingPackageBooking";
+import MyBookings from "../pages/booking/MyBooking";
+
 import ProtectedRoute from "./ProtectedRoutes";
 import AdminProtectedRoute from "./AdminProtectedRoute";
 
+// Admin pages
 import AdminDashboard from "../pages/AdminDashboard";
 import SpecialPackageManager from "../components/admin/SpecialPackageManager";
 import DancingPackageManager from "../components/admin/DancingPackageManager";
@@ -20,20 +29,25 @@ import CategoryManager from "../components/admin/CategoryManager";
 import DressItemsManager from "../components/admin/DressItemsManager";
 import DancingPerformerTypeManager from "../components/admin/DancingPerformerTypeManager";
 import SpecialItemTypeManager from "../components/admin/SpecialItemTypeManager";
+import BookingRequestsManager from "../components/admin/BookingRequestsManager";
+import DancingBookingRequestsManager from "../components/admin/DancingBookingRequestsManager";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* ── Public Routes ── */}
       <Route path="/" element={<Home />} />
       <Route path="/services" element={<Services />} />
-      <Route path="/packages" element={<Packages />} />
-      <Route path="/booking" element={<Booking />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
 
-      {/* Protected User Routes */}
+      {/* ── Service Sub-pages (matches Header nav links) ── */}
+      <Route path="/services/special" element={<SpecialPackages />} />
+      <Route path="/services/dancing-group" element={<DancingGroup />} />
+      <Route path="/services/dress-items" element={<DressItems />} />
+
+      {/* ── Protected User Routes ── */}
       <Route
         path="/profile"
         element={
@@ -42,8 +56,25 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/booking/special-packages"
+        element={
+          <ProtectedRoute>
+            <SpecialPackageBooking />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Protected Admin Routes */}
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Protected Admin Routes ── */}
       <Route
         path="/admin/dashboard"
         element={
@@ -92,7 +123,6 @@ const AppRoutes = () => {
           </AdminProtectedRoute>
         }
       />
-
       <Route
         path="/admin/dancing-performer-types"
         element={
@@ -101,12 +131,41 @@ const AppRoutes = () => {
           </AdminProtectedRoute>
         }
       />
-
       <Route
         path="/admin/special-item-types"
         element={
           <AdminProtectedRoute>
             <SpecialItemTypeManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      {/* Admin: Booking Special Requests */}
+      <Route
+        path="/admin/booking-requests"
+        element={
+          <AdminProtectedRoute>
+            <BookingRequestsManager />
+          </AdminProtectedRoute>
+        }
+      />
+
+      {/* Customer: Dancing Package Booking */}
+      <Route
+        path="/booking/dancing-packages"
+        element={
+          <ProtectedRoute>
+            <DancingPackageBooking />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin: Dancing Package Booking Requests */}
+      <Route
+        path="/admin/dancing-booking-requests"
+        element={
+          <AdminProtectedRoute>
+            <DancingBookingRequestsManager />
           </AdminProtectedRoute>
         }
       />

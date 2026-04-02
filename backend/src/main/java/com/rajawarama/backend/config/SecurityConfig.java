@@ -56,7 +56,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // 🔒 Security filter chain
+    // Security filter chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -81,7 +81,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/images/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // Public read-only endpoints for service pages (no login required)
+                        .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+
+                        //for admin and customer booking endpoints
+                        .requestMatchers("/api/bookings/**").hasAnyRole("CUSTOMER", "ADMIN")
+
+                        // Admin-only full access
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
 
@@ -94,7 +103,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    //Authentication manager
+    // Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config

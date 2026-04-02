@@ -1,8 +1,3 @@
-
-// ═══════════════════════════════════════════════════════════════════
-// FILE: src/main/java/com/rajawarama/backend/dto/booking/CreateSpecialPackageBookingRequest.java
-// ═══════════════════════════════════════════════════════════════════
-
 package com.rajawarama.backend.dto.booking;
 
 import com.rajawarama.backend.enums.DressRole;
@@ -48,14 +43,14 @@ public class CreateSpecialPackageBookingRequest {
     @Valid
     private List<DressSelectionEntry> dressSelections = new ArrayList<>();
 
-    // Optional: override the dancing package linked to the special package
+    // Optional for override the dancing package linked to the special package
     private UUID overrideDancingPackageId;
 
-    // Optional: extra performers on top of the dancing package
+    // Optional for extra performers on top of the dancing package
     @Valid
     private List<ExtraPerformerEntry> extraPerformers = new ArrayList<>();
 
-    // ── Nested DTOs ─────────────────────────────────────────────────
+    //  --------------------------------------------- Nested DTOs
 
     @Getter
     @Setter

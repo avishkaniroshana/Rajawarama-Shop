@@ -1,8 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
-// FILE: src/main/java/com/rajawarama/backend/dto/booking/SetTransportPriceRequest.java
-// ═══════════════════════════════════════════════════════════════════
-
-package com.rajawarama.backend.dto;
+package com.rajawarama.backend.dto.booking;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;

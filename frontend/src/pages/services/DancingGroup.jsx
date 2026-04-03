@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Users, Drum, ArrowRight, RefreshCw, ChevronDown } from "lucide-react";
 
-/* ------------------------ Brand Styles --------------------- */
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -247,25 +246,46 @@ const STYLES = `
     margin-top: auto;
     padding: 20px 24px 24px;
   }
+
   .dg-book-btn {
-    width: 100%; padding: 13px;
-    background: linear-gradient(135deg, #3730A3, #4338CA);
-    border: none; border-radius: 6px; color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.80rem; font-weight: 500; letter-spacing: 0.10em; text-transform: uppercase;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    position: relative; overflow: hidden;
-    transition: box-shadow 0.25s, transform 0.18s;
-  }
-  .dg-book-btn::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(201,168,76,0.18), transparent);
-    opacity: 0; transition: opacity 0.25s;
-  }
-  .dg-book-btn:hover { box-shadow: 0 4px 20px rgba(55,48,163,0.35); transform: translateY(-1px); }
-  .dg-book-btn:hover::after { opacity: 1; }
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, #1e1b4b, #1e3a8a);
+  border: none; border-radius: 6px; color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.80rem; font-weight: 500; letter-spacing: 0.10em; text-transform: uppercase;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  position: relative; overflow: hidden;
+  transition: box-shadow 0.25s, transform 0.18s;
+}
+.dg-book-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.18), transparent);
+  opacity: 0; transition: opacity 0.25s;
+}
+.dg-book-btn:hover { box-shadow: 0 4px 20px rgba(30,27,75,0.45); transform: translateY(-1px); }
+.dg-book-btn:hover::after { opacity: 1; }
+
+  // .dg-book-btn {
+  //   width: 100%; padding: 13px;
+  //   background: linear-gradient(135deg, #3730A3, #4338CA);
+  //   border: none; border-radius: 6px; color: #fff;
+  //   font-family: 'DM Sans', sans-serif;
+  //   font-size: 0.80rem; font-weight: 500; letter-spacing: 0.10em; text-transform: uppercase;
+  //   cursor: pointer;
+  //   display: flex; align-items: center; justify-content: center; gap: 8px;
+  //   position: relative; overflow: hidden;
+  //   transition: box-shadow 0.25s, transform 0.18s;
+  // }
+  // .dg-book-btn::after {
+  //   content: '';
+  //   position: absolute; inset: 0;
+  //   background: linear-gradient(135deg, rgba(201,168,76,0.18), transparent);
+  //   opacity: 0; transition: opacity 0.25s;
+  // }
+  // .dg-book-btn:hover { box-shadow: 0 4px 20px rgba(55,48,163,0.35); transform: translateY(-1px); }
+  // .dg-book-btn:hover::after { opacity: 1; }
 
   /* ── States ── */
   .dg-state {
@@ -376,9 +396,18 @@ const DancingGroup = () => {
     0,
   );
 
+  useEffect(() => {
+    const tag = document.createElement("style");
+    tag.setAttribute("data-page", "dancing-group");
+    tag.innerHTML = STYLES;
+    document.head.appendChild(tag);
+    return () => {
+      if (document.head.contains(tag)) document.head.removeChild(tag);
+    };
+  }, []);
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
       <div className="dg-root">
         {/* ── Hero ── */}
         <section className="dg-hero">

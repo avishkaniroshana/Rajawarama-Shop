@@ -166,14 +166,17 @@ const STYLES = `
     font-family:'DM Sans',sans-serif;font-size:.80rem;font-weight:500;
     letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .2s}
   .dpbk-back-btn:hover{border-color:var(--text);color:var(--text)}
-  .dpbk-next-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;
-    border-radius:7px;border:none;
-    background:linear-gradient(135deg,var(--indigo),#4338CA);color:#fff;
-    font-family:'DM Sans',sans-serif;font-size:.80rem;font-weight:500;
-    letter-spacing:.09em;text-transform:uppercase;cursor:pointer;
-    transition:box-shadow .22s,transform .18s}
-  .dpbk-next-btn:hover{box-shadow:0 4px 20px rgba(55,48,163,.32);transform:translateY(-1px)}
-  .dpbk-next-btn:disabled{opacity:.50;cursor:not-allowed;transform:none}
+  .dpbk-next-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
+    border-radius: 7px; border: none;
+    background: linear-gradient(135deg, #1e1b4b, #1e3a8a);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: .80rem; font-weight: 500;
+    letter-spacing: .09em; text-transform: uppercase; cursor: pointer;
+    transition: box-shadow .22s, transform .18s;
+  }
+  .dpbk-next-btn:hover { box-shadow: 0 4px 20px rgba(30,27,75,.45); transform: translateY(-1px); }
+  .dpbk-next-btn:disabled { opacity: .50; cursor: not-allowed; transform: none; }
   .dpbk-spinner{width:44px;height:44px;border-radius:50%;border:2px solid rgba(201,168,76,.15);
     border-top-color:var(--gold);animation:dpbkSpin .85s linear infinite;margin:60px auto;display:block}
   @keyframes dpbkSpin{to{transform:rotate(360deg)}}
@@ -332,7 +335,7 @@ const DancingPackageBooking = () => {
       };
 
       await api.post("/api/bookings/dancing-packages", payload);
-      toastSuccess("Dancing package booking submitted! 🎉");
+      toastSuccess("Dancing package booking submitted! ");
       navigate("/my-bookings");
     } catch (err) {
       toastError(
@@ -360,7 +363,7 @@ const DancingPackageBooking = () => {
         {/* ── Hero ── */}
         <section className="dpbk-hero">
           <div className="dpbk-hero-badge">
-            <Drum size={12} /> New Booking
+            <Drum size={12} />  Dancing Package Booking
           </div>
           <h1 className="dpbk-hero-title">
             Book a <em>Dancing Package</em>
@@ -465,7 +468,7 @@ const DancingPackageBooking = () => {
             </>
           )}
 
-          {/* ════ STEP 1 — Event Details ════ */}
+          {/*  STEP 1 — Event Details  */}
           {step === 1 && (
             <>
               <h2 className="dpbk-section-title">Event Details</h2>
@@ -493,7 +496,7 @@ const DancingPackageBooking = () => {
                   <input
                     name="hotelName"
                     className="dpbk-input"
-                    placeholder="e.g. Cinnamon Grand Colombo"
+                    placeholder="e.g. Hill Side Hotel"
                     value={eventForm.hotelName}
                     onChange={handleEventChange}
                   />
@@ -510,7 +513,7 @@ const DancingPackageBooking = () => {
                   <input
                     name="nearestCity"
                     className="dpbk-input"
-                    placeholder="e.g. Colombo"
+                    placeholder="e.g. Badulla"
                     value={eventForm.nearestCity}
                     onChange={handleEventChange}
                   />
@@ -601,7 +604,7 @@ const DancingPackageBooking = () => {
             </>
           )}
 
-          {/* ════ STEP 2 — Extra Performers ════ */}
+          {/*  STEP 2 — Extra Performers  */}
           {step === 2 && (
             <>
               <h2 className="dpbk-section-title">Additional Performers</h2>
@@ -709,7 +712,7 @@ const DancingPackageBooking = () => {
             </>
           )}
 
-          {/* ════ STEP 3 — Review & Submit ════ */}
+          {/*  STEP 3 — Review & Submit  */}
           {step === 3 && (
             <>
               <h2 className="dpbk-section-title">Review & Submit</h2>

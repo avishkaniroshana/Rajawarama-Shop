@@ -25,8 +25,13 @@ public class DressItemResponse {
     private UUID categoryId;
 
     private String categoryName;
+    //  All 3 category prices
+    private Double categoryGroomDressPrice;
+    private Double categoryBestmanDressPrice;
+    private Double categoryPageBoyDressPrice;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 }
+

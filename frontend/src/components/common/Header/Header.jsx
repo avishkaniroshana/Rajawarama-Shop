@@ -56,7 +56,7 @@ const STYLES = `
     --text-muted:    #6B5B4E;
   }
 
-  /* ── Shell ──────────────────────────────────────────────── */
+  /* ── Shell  */
   .rw-header {
     font-family: 'DM Sans', sans-serif;
     position: sticky; top: 0; z-index: 100;
@@ -76,7 +76,7 @@ const STYLES = `
     transition: padding 0.35s ease;
   }
 
-  /* ── Logo ───────────────────────────────────────────────── */
+  /* ── Logo  */
   .rw-logo {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.75rem; font-weight: 700;
@@ -100,7 +100,7 @@ const STYLES = `
   }
   .rw-logo:hover::after { width: 100%; }
 
-  /* ── Nav ────────────────────────────────────────────────── */
+  /* ── Nav  */
   .rw-nav { display: flex; align-items: center; gap: 36px; }
 
   .rw-link {
@@ -121,7 +121,7 @@ const STYLES = `
   .rw-link:hover { color: var(--crimson); }
   .rw-link:hover::after { width: 100%; }
 
-  /* ── Services trigger ───────────────────────────────────── */
+  /* ── Services trigger  */
   .rw-svc-wrap { position: relative; }
 
   /* Transparent bridge that fills the gap between trigger and dropdown
@@ -156,7 +156,7 @@ const STYLES = `
   .rw-svc-trigger .chevron { transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
   .rw-svc-wrap:hover .chevron { transform: rotate(180deg); }
 
-  /* ── Services dropdown ──────────────────────────────────── */
+  /* ── Services dropdown  */
   .rw-svc-dropdown {
     position: absolute; top: calc(100% + 18px); left: 50%;
     transform: translateX(-50%) translateY(-8px);
@@ -203,7 +203,7 @@ const STYLES = `
   .svc-label { font-weight: 500; font-size: 0.875rem; }
   .svc-desc  { font-size: 0.70rem; color: var(--text-muted); margin-top: 2px; }
 
-  /* ── Auth buttons ───────────────────────────────────────── */
+  /* ── Auth buttons  */
   .rw-auth { display: flex; align-items: center; gap: 10px; }
 
   .rw-btn-in {
@@ -230,7 +230,7 @@ const STYLES = `
   .rw-btn-up:hover { box-shadow: 0 4px 20px rgba(139,26,26,0.35); transform: translateY(-1px); }
   .rw-btn-up:hover::after { opacity: 1; }
 
-  /* ── Profile button ─────────────────────────────────────── */
+  /* ── Profile button  */
   .rw-prof-btn {
     display: flex; align-items: center; gap: 10px;
     padding: 6px 10px 6px 6px; border-radius: 40px;
@@ -254,7 +254,7 @@ const STYLES = `
   .rw-prof-chevron { transition: transform 0.3s; color: var(--text-muted); }
   .rw-prof-btn.open .rw-prof-chevron { transform: rotate(180deg); }
 
-  /* ── Profile dropdown ───────────────────────────────────── */
+  /* ── Profile dropdown  */
   .rw-prof-dd {
     position: absolute; top: calc(100% + 14px); right: 0; width: 260px;
     background: #fff; border: 1px solid var(--border); border-radius: 6px;
@@ -312,7 +312,7 @@ const STYLES = `
     background: linear-gradient(90deg, transparent, rgba(201,168,76,0.4), transparent);
   }
 
-  /* ── Mobile toggle ──────────────────────────────────────── */
+  /* ── Mobile toggle  */
   .rw-mob-toggle {
     background: none; border: none; cursor: pointer;
     color: var(--text-main); display: none; padding: 6px; border-radius: 6px;
@@ -320,7 +320,7 @@ const STYLES = `
   }
   .rw-mob-toggle:hover { color: var(--crimson); background: var(--crimson-glow); }
 
-  /* ── Mobile overlay ─────────────────────────────────────── */
+  /* ── Mobile overlay  */
   .rw-mob-overlay {
     position: fixed; inset: 0;
     background: rgba(15,7,7,0.60);
@@ -412,14 +412,14 @@ const STYLES = `
   }
   .rw-mob-sign-up:hover { box-shadow: 0 4px 16px rgba(139,26,26,0.35); }
 
-  /* ── Responsive cutoff ──────────────────────────────────── */
+  /* ── Responsive cutoff  */
   @media (max-width: 900px) {
     .rw-nav, .rw-auth { display: none !important; }
     .rw-mob-toggle { display: flex !important; align-items: center; justify-content: center; }
   }
 `;
 
-/* ─── Service items config ──────────────────────────────────────────────── */
+/*  Service items config  */
 const SERVICES = [
   {
     to: "/services/special",
@@ -441,9 +441,9 @@ const SERVICES = [
   },
 ];
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
    HEADER COMPONENT
-═══════════════════════════════════════════════════════════════════════════ */
+ */
 const Header = () => {
   const { isLoggedIn: contextLoggedIn, userRole } = useAuth();
 
@@ -715,11 +715,11 @@ const Header = () => {
               )}
 
               <Link
-                to="/booking"
+                to="/my-bookings"
                 className="rw-mob-link"
                 onClick={() => setMobileOpen(false)}
               >
-                Booking
+                My Booking
               </Link>
               <Link
                 to="/contact"

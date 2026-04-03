@@ -120,7 +120,7 @@ public class DressItemService {
     }
 
 
-     //Delete dress item (including its image)
+    //Delete dress item (including its image)
     @Transactional
     public void delete(UUID dressItemId) {
         DressItem item = dressItemRepository.findById(dressItemId)
@@ -150,8 +150,12 @@ public class DressItemService {
                 )
                 .categoryId(item.getCategory().getCategoryId())
                 .categoryName(item.getCategory().getName())
+                .categoryGroomDressPrice(item.getCategory().getGroomDressPrice())
+                .categoryBestmanDressPrice(item.getCategory().getBestmanDressPrice())
+                .categoryPageBoyDressPrice(item.getCategory().getPageBoyDressPrice())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .build();
     }
 }
+

@@ -94,6 +94,19 @@ public class AdminUserService {
         userRepository.save(user);
     }
 
+    // ADMIN Restores a soft-deleted user
+    public UserResponse restoreUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isDeleted()) {
+            throw new BadRequestException("User is already active");
+        }
+
+        user.setDeleted(false);
+        return mapToResponse(userRepository.save(user));
+    }
+
     // ADMIN performs Hard delete on users with associated RefreshTokens
     @Transactional
     public void hardDeleteUser(UUID userId) {

@@ -30,6 +30,15 @@ public class Category {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "groom_dress_price",   nullable = true)
+    private Double groomDressPrice;
+
+    @Column(name = "bestman_dress_price", nullable = true)
+    private Double bestmanDressPrice;
+
+    @Column(name = "pageboy_dress_price", nullable = true)
+    private Double pageBoyDressPrice;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -77,11 +77,13 @@ const STYLES = `
   .sp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:32px; }
 
   /* ── Package Card ── */
+  /* FIX: flex column so footer is always pushed to bottom */
   .sp-card {
     background:var(--surf); border:1px solid var(--bdr); border-radius:12px;
     overflow:hidden; position:relative;
     box-shadow:0 2px 0 rgba(201,168,76,.18),0 8px 32px rgba(139,26,26,.05);
     transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s;
+    display:flex; flex-direction:column;
   }
   .sp-card:hover {
     transform:translateY(-4px);
@@ -144,23 +146,28 @@ const STYLES = `
     background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.22);
     font-size:.72rem; color:#7A5C1E; font-weight:500;
   }
-  .sp-card-foot { padding:20px 28px 26px; margin-top:4px; }
-  .sp-book-btn {
-    width:100%; padding:13px;
-    background: linear-gradient(135deg, #FF7A18, #FFB347);
-    border:none; border-radius:6px; color:#fff;
-    font-family:'DM Sans',sans-serif; font-size:.80rem; font-weight:500;
-    letter-spacing:.10em; text-transform:uppercase; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    position:relative; overflow:hidden; transition:box-shadow .25s,transform .18s;
+
+  /* FIX: mt-auto pushes footer to bottom of the flex card */
+  .sp-card-foot {
+    padding:20px 28px 26px;
+    margin-top:auto;
   }
-  .sp-book-btn::after {
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(135deg,rgba(201,168,76,.20),transparent);
-    opacity:0; transition:.25s;
-  }
-  .sp-book-btn:hover { box-shadow:0 4px 20px rgba(139,26,26,.35); transform:translateY(-1px); }
-  .sp-book-btn:hover::after { opacity:1; }
+.sp-book-btn {
+  width:100%; padding:13px;
+  background: linear-gradient(135deg, #c45000, #e07b00);
+  border:none; border-radius:6px; color:#fff;
+  font-family:'DM Sans',sans-serif; font-size:.80rem; font-weight:500;
+  letter-spacing:.10em; text-transform:uppercase; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  position:relative; overflow:hidden; transition:box-shadow .25s,transform .18s;
+}
+.sp-book-btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(201,168,76,.20),transparent);
+  opacity:0; transition:.25s;
+}
+.sp-book-btn:hover { box-shadow:0 4px 20px rgba(100,30,0,.45); transform:translateY(-1px); }
+.sp-book-btn:hover::after { opacity:1; }
 
   /* ── States ── */
   .sp-state {
@@ -190,6 +197,26 @@ const STYLES = `
     background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.20);
     display:flex; align-items:center; justify-content:center; color:var(--go);
   }
+
+  /* ── Sort Bar ── */
+  .sp-sort-bar {
+    display:flex; align-items:center; justify-content:flex-end;
+    gap:10px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .sp-sort-label { font-size:.72rem; font-weight:500; letter-spacing:.10em; text-transform:uppercase; color:var(--mu); }
+  .sp-sort-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:6px; border:1px solid var(--bdr);
+    background:var(--surf); font-family:'DM Sans',sans-serif;
+    font-size:.75rem; font-weight:500; color:var(--mu);
+    cursor:pointer; transition:all .18s;
+  }
+  .sp-sort-btn.active {
+    background:var(--cr-g); border-color:rgba(139,26,26,.30);
+    color:var(--cr); font-weight:600;
+  }
+  .sp-sort-btn:hover:not(.active) { border-color:rgba(201,168,76,.45); color:var(--tx); }
+
   @media(max-width:600px){
     .sp-grid{grid-template-columns:1fr}
     .sp-card-head{flex-direction:column}
@@ -206,10 +233,13 @@ const PackageCard = ({ pkg, onBook }) => {
 
   return (
     <div className="sp-card">
+      {/* ── Top content grows to fill space ── */}
       <div className="sp-card-head">
         <h3 className="sp-card-name">{pkg.name}</h3>
         {pkg.discountPercent > 0 && (
-          <span className="sp-discount-badge"><Tag size={11} /> {pkg.discountPercent}% OFF</span>
+          <span className="sp-discount-badge">
+            <Tag size={11} /> {pkg.discountPercent}% OFF
+          </span>
         )}
       </div>
 
@@ -268,8 +298,8 @@ const PackageCard = ({ pkg, onBook }) => {
         </div>
       )}
 
+      {/* FIX: mt-auto via .sp-card-foot always pins button to bottom */}
       <div className="sp-card-foot">
-        {/* ── Navigates to the full booking page with this package pre-selected ── */}
         <button className="sp-book-btn" onClick={() => onBook(pkg)}>
           Book This Package <ArrowRight size={14} />
         </button>
@@ -280,13 +310,15 @@ const PackageCard = ({ pkg, onBook }) => {
 
 /* =====================================================================
    MAIN PAGE
-========================================================================== */
+======================================================================= */
 const SpecialPackages = () => {
   const { isLoggedIn } = useAuth();
-  const navigate       = useNavigate();
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
+  const navigate        = useNavigate();
+  const [packages, setPackages]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+  // SORT: "asc" = low→high, "desc" = high→low
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const fetchPackages = async () => {
     setLoading(true); setError(null);
@@ -302,79 +334,104 @@ const SpecialPackages = () => {
 
   useEffect(() => { fetchPackages(); }, []);
 
+  // SORT: derive sorted list without mutating state
+  const sortedPackages = [...packages].sort((a, b) =>
+    sortOrder === "asc"
+      ? (a.finalPrice || 0) - (b.finalPrice || 0)
+      : (b.finalPrice || 0) - (a.finalPrice || 0)
+  );
+
   const handleBook = (pkg) => {
     if (!isLoggedIn) {
-      // Redirect to sign-in, then come back to the booking page
       navigate("/signin", { state: { from: "/services/special" } });
       return;
     }
-    // ── Navigate to the full booking page, passing the selected package id ──
-    // SpecialPackageBooking reads this from location.state and auto-selects
-    // the package, then jumps straight to Step 1 (Event Details).
     navigate("/booking/special-packages", {
       state: { preselectedPackageId: pkg.id },
     });
   };
 
+  useEffect(() => {
+    const tag = document.createElement("style");
+    tag.setAttribute("data-page", "special-packages");
+    tag.innerHTML = STYLES;
+    document.head.appendChild(tag);
+    return () => {
+      if (document.head.contains(tag)) document.head.removeChild(tag);
+    };
+  }, []);
+
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
-      <div className="sp-root">
+    <div className="sp-root">
+      {/* Hero */}
+      <section className="sp-hero">
+        <div className="sp-hero-badge"><Sparkles size={12} /> Special Packages Booking</div>
+        <h1 className="sp-hero-title">Our <em>Special</em> Packages</h1>
+        <p className="sp-hero-sub">
+          Curated with care — every detail of your most cherished day, wrapped in tradition and elegance.
+        </p>
+        <div className="sp-hero-rule" />
+      </section>
 
-        {/* Hero */}
-        <section className="sp-hero">
-          <div className="sp-hero-badge"><Sparkles size={12} /> Premium Packages</div>
-          <h1 className="sp-hero-title">Our <em>Special</em> Packages</h1>
-          <p className="sp-hero-sub">
-            Curated with care — every detail of your most cherished day, wrapped in tradition and elegance.
-          </p>
-          <div className="sp-hero-rule" />
-        </section>
+      <div className="sp-body">
+        <div className="sp-section-label"><span>Available Packages</span></div>
 
-        <div className="sp-body">
-          <div className="sp-section-label"><span>Available Packages</span></div>
+        {/* ── Sort Controls ── */}
+        {!loading && !error && packages.length > 1 && (
+          <div className="sp-sort-bar">
+            <span className="sp-sort-label">Sort by Price:</span>
+            <button
+              className={`sp-sort-btn${sortOrder === "asc" ? " active" : ""}`}
+              onClick={() => setSortOrder("asc")}
+            >
+              <ChevronUp size={13} /> Low → High
+            </button>
+            <button
+              className={`sp-sort-btn${sortOrder === "desc" ? " active" : ""}`}
+              onClick={() => setSortOrder("desc")}
+            >
+              <ChevronDown size={13} /> High → Low
+            </button>
+          </div>
+        )}
 
-          {loading && (
-            <div className="sp-state">
-              <div className="sp-spinner" />
-              <p className="sp-state-text">Loading packages…</p>
-            </div>
-          )}
+        {loading && (
+          <div className="sp-state">
+            <div className="sp-spinner" />
+            <p className="sp-state-text">Loading packages…</p>
+          </div>
+        )}
 
-          {error && (
-            <div className="sp-state">
-              <p className="sp-state-title">Something went wrong</p>
-              <p className="sp-state-text">{error}</p>
-              <button className="sp-retry-btn" onClick={fetchPackages}>
-                <RefreshCw size={14} /> Try Again
-              </button>
-            </div>
-          )}
+        {error && (
+          <div className="sp-state">
+            <p className="sp-state-title">Something went wrong</p>
+            <p className="sp-state-text">{error}</p>
+            <button className="sp-retry-btn" onClick={fetchPackages}>
+              <RefreshCw size={14} /> Try Again
+            </button>
+          </div>
+        )}
 
-          {!loading && !error && packages.length === 0 && (
-            <div className="sp-empty">
-              <div className="sp-empty-icon"><Sparkles size={28} /></div>
-              <p className="sp-state-title">No Packages Yet</p>
-              <p className="sp-state-text">Check back soon.</p>
-            </div>
-          )}
+        {!loading && !error && packages.length === 0 && (
+          <div className="sp-empty">
+            <div className="sp-empty-icon"><Sparkles size={28} /></div>
+            <p className="sp-state-title">No Packages Yet</p>
+            <p className="sp-state-text">Check back soon.</p>
+          </div>
+        )}
 
-          {!loading && !error && packages.length > 0 && (
-            <div className="sp-grid">
-              {packages.map(pkg => (
-                <PackageCard key={pkg.id} pkg={pkg} onBook={handleBook} />
-              ))}
-            </div>
-          )}
-        </div>
-
+        {!loading && !error && sortedPackages.length > 0 && (
+          <div className="sp-grid">
+            {sortedPackages.map(pkg => (
+              <PackageCard key={pkg.id} pkg={pkg} onBook={handleBook} />
+            ))}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
 export default SpecialPackages;
-
-
 
 

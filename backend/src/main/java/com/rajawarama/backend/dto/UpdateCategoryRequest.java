@@ -11,5 +11,9 @@ public class UpdateCategoryRequest {
     @NotBlank(message = "Category name is required!")
     private String name;
     private String description;
+    private Double groomDressPrice;    // nullable
+    private Double bestmanDressPrice;  // nullable
+    private Double pageBoyDressPrice;  // nullable
 
 }
+

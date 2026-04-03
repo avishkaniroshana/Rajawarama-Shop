@@ -4,6 +4,7 @@ import com.rajawarama.backend.dto.booking.CreateSpecialPackageBookingRequest;
 import com.rajawarama.backend.dto.booking.SetTransportPriceRequest;
 import com.rajawarama.backend.dto.booking.SpecialPackageBookingResponse;
 import com.rajawarama.backend.entity.*;
+import com.rajawarama.backend.enums.DressRole;
 import com.rajawarama.backend.enums.RequestStatus;
 import com.rajawarama.backend.exception.BadRequestException;
 import com.rajawarama.backend.exception.ResourceNotFoundException;
@@ -114,14 +115,22 @@ public class SpecialPackageBookingService {
 
         // 8. ── CALCULATE AND STORE bookingSubtotal ──────────────────────────
         //
-        // Formula:
-        //   bookingSubtotal = specialPackage.finalPrice
-        //                   + (selectedDancing.price - defaultDancing.price)  ← dancing adjustment
-        //                   + sum(extraPerformers price × quantity)
+        // The special_package.finalPrice was built using special_item_type prices
+        // (Groom=25000, Bestman=15000, Pageboy=8500).
+        // We SUBTRACT those base prices and ADD the category-specific prices
+        // for whatever dress category the user actually selected.
         //
+        // Full formula:
+        //   bookingSubtotal = specialPackage.finalPrice
+        //                   + (selectedDancing.price - defaultDancing.price)  ← dancing override
+        //                   + sum(extraPerformers price × quantity)
+        //                   + dressPriceAdjustment                            ← category pricing
+        //
+
         double basePackagePrice = specialPackage.getFinalPrice() != null
                 ? specialPackage.getFinalPrice() : 0.0;
 
+        // ── Dancing adjustment ────────────────────────────────────────────
         double defaultDancingPrice = 0.0;
         if (specialPackage.getLinkedDancingPackage() != null
                 && specialPackage.getLinkedDancingPackage().getTotalPrice() != null) {
@@ -135,6 +144,7 @@ public class SpecialPackageBookingService {
 
         double dancingAdjustment = selectedDancingPrice - defaultDancingPrice;
 
+        // ── Extra performers ──────────────────────────────────────────────
         double extraPerformersTotal = 0.0;
         if (request.getExtraPerformers() != null) {
             for (CreateSpecialPackageBookingRequest.ExtraPerformerEntry entry
@@ -148,7 +158,63 @@ public class SpecialPackageBookingService {
             }
         }
 
-        double bookingSubtotal = basePackagePrice + dancingAdjustment + extraPerformersTotal;
+        // ── Category dress price adjustment ──────────────────────────────
+        //
+        // Extract the base prices that were baked into the special package
+        // using special_item_type name matching:
+        //   "groom"   → matches "Groom Dressing"   (25000)
+        //   "bestmen" → matches "Bestmen Dressing"  (15000)
+        //   "pageboy" → matches "Pageboy Dressing"  (8500)
+        //
+        // If the selected dress belongs to a category with different prices,
+        // we adjust the subtotal by the difference.
+        //
+        double baseGroomPrice   = getBaseRolePrice(specialPackage, "groom");
+        double baseBestmanPrice = getBaseRolePrice(specialPackage, "bestmen");
+        double basePageboyPrice = getBaseRolePrice(specialPackage, "pageboy");
+
+        double groomAdjustment   = 0.0;
+        double bestmanAdjustment = 0.0;
+        double pageboyAdjustment = 0.0;
+
+        if (request.getDressSelections() != null) {
+            for (CreateSpecialPackageBookingRequest.DressSelectionEntry entry
+                    : request.getDressSelections()) {
+
+                DressItem dress = dressItemRepository.findById(entry.getDressItemId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Dress item not found: " + entry.getDressItemId()));
+                Category cat = dress.getCategory();
+
+                if (entry.getRole() == DressRole.GROOM && baseGroomPrice > 0) {
+                    Double catPrice = cat.getGroomDressPrice();
+                    if (catPrice != null) {
+                        groomAdjustment = catPrice - baseGroomPrice;
+                    }
+
+                } else if (entry.getRole() == DressRole.BEST_MAN && baseBestmanPrice > 0) {
+                    Double catPrice = cat.getBestmanDressPrice();
+                    if (catPrice != null) {
+                        bestmanAdjustment = catPrice - baseBestmanPrice;
+                    }
+
+                } else if (entry.getRole() == DressRole.PAGE_BOY && basePageboyPrice > 0) {
+                    Double catPrice = cat.getPageBoyDressPrice();
+                    if (catPrice != null) {
+                        pageboyAdjustment = catPrice - basePageboyPrice;
+                    }
+                }
+            }
+        }
+
+        double dressPriceAdjustment = groomAdjustment + bestmanAdjustment + pageboyAdjustment;
+
+        // ── Final subtotal ────────────────────────────────────────────────
+        double bookingSubtotal = basePackagePrice
+                + dancingAdjustment
+                + extraPerformersTotal
+                + dressPriceAdjustment;
+
         booking.setBookingSubtotal(bookingSubtotal);
         // grandTotal stays null until admin sets transport price
 
@@ -177,9 +243,8 @@ public class SpecialPackageBookingService {
     }
 
     // -----------------------------------------
-    // CUSTOMER: Cancel booking (only when PRICE_SET)
+    // CUSTOMER: Cancel booking (only when PENDING or PRICE_SET)
     // -----------------------------------------
-
     @Transactional
     public SpecialPackageBookingResponse cancelBooking(String userEmail, UUID requestId) {
         RequestSpecialPackage booking = getBookingOrThrow(requestId);
@@ -218,7 +283,6 @@ public class SpecialPackageBookingService {
     // -----------------------------------------
     // ADMIN: Get all bookings
     // -----------------------------------------
-
     public List<SpecialPackageBookingResponse> getAllBookings() {
         return bookingRepository.findAllByOrderByCreatedAtDesc()
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
@@ -250,9 +314,9 @@ public class SpecialPackageBookingService {
 
         booking.setTransportPrice(request.getTransportPrice());
 
-        // ─---------------------CALCULATE AND STORE grandTotal
-        double subtotal = booking.getBookingSubtotal() != null ? booking.getBookingSubtotal() : 0.0;
-        double transport = request.getTransportPrice() != null ? request.getTransportPrice() : 0.0;
+        // Calculate and store grandTotal
+        double subtotal  = booking.getBookingSubtotal() != null ? booking.getBookingSubtotal() : 0.0;
+        double transport = request.getTransportPrice()  != null ? request.getTransportPrice()  : 0.0;
         booking.setGrandTotal(subtotal + transport);
 
         booking.setStatus(RequestStatus.PRICE_SET);
@@ -282,7 +346,9 @@ public class SpecialPackageBookingService {
     public SpecialPackageBookingResponse rejectBooking(UUID requestId) {
         RequestSpecialPackage booking = getBookingOrThrow(requestId);
         List<RequestStatus> rejectable = List.of(
-                RequestStatus.PENDING, RequestStatus.PRICE_SET, RequestStatus.ACCEPTED_WITH_PRICE
+                RequestStatus.PENDING,
+                RequestStatus.PRICE_SET,
+                RequestStatus.ACCEPTED_WITH_PRICE
         );
         if (!rejectable.contains(booking.getStatus())) {
             throw new BadRequestException(
@@ -309,11 +375,33 @@ public class SpecialPackageBookingService {
     }
 
     // -----------------------------------------
-    // HELPER: load or throw
+    // HELPER: Load booking or throw
     // -----------------------------------------
     private RequestSpecialPackage getBookingOrThrow(UUID requestId) {
         return bookingRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + requestId));
+    }
+
+    // -----------------------------------------
+    // HELPER: Extract base dress price for a role
+    //         from the special package's items list.
+    //
+    // Uses keyword matching against special_item_type names:
+    //   "groom"   → "Groom Dressing"   → 25000
+    //   "bestmen" → "Bestmen Dressing" → 15000
+    //   "pageboy" → "Pageboy Dressing" → 8500
+    //
+    // Returns 0.0 if the package does not include that role's dressing
+    // (e.g. SILVER-I has no Bestman/Pageboy → no adjustment applied).
+    // -----------------------------------------
+    private double getBaseRolePrice(SpecialPackage pkg, String roleKeyword) {
+        return pkg.getItems().stream()
+                .filter(i -> i.getSpecialItemType().getName()
+                        .toLowerCase().contains(roleKeyword))
+                .mapToDouble(i -> i.getSpecialItemType().getPricePerUnit() != null
+                        ? i.getSpecialItemType().getPricePerUnit() * i.getQuantity()
+                        : 0.0)
+                .sum();
     }
 
     // -----------------------------------------
@@ -373,10 +461,10 @@ public class SpecialPackageBookingService {
                 .specialPackageId(b.getSpecialPackage().getId())
                 .specialPackageName(b.getSpecialPackage().getName())
                 .specialPackageFinalPrice(b.getSpecialPackage().getFinalPrice())
-                // ── Stored prices (read from DB, never recalculated) ──
+                // Stored prices — read from DB, never recalculated
                 .bookingSubtotal(b.getBookingSubtotal())
                 .grandTotal(b.getGrandTotal())
-                // Event
+                // Event details
                 .hotelName(b.getHotelName())
                 .nearestCity(b.getNearestCity())
                 .eventDate(b.getEventDate())
@@ -398,3 +486,4 @@ public class SpecialPackageBookingService {
                 .build();
     }
 }
+

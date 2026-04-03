@@ -21,6 +21,7 @@ import DressItems from "../pages/services/DressItems";
 import SpecialPackageBooking from "../pages/booking/SpecialPackageBooking";
 import DancingPackageBooking from "../pages/booking/DancingPackageBooking";
 import MyBookings from "../pages/booking/MyBooking";
+import DressOnlyBookingPage from "../pages/booking/DressOnlyBookingPage";
 
 // Admin pages
 import AdminDashboard from "../pages/AdminDashboard";
@@ -33,6 +34,7 @@ import DancingPerformerTypeManager from "../components/admin/DancingPerformerTyp
 import SpecialItemTypeManager from "../components/admin/SpecialItemTypeManager";
 import BookingRequestsManager from "../components/admin/BookingRequestsManager";
 import DancingBookingRequestsManager from "../components/admin/DancingBookingRequestsManager";
+import DressOnlyBookingManager from "../components/admin/DressOnlyBookingManager";
 
 import ProtectedRoute from "./ProtectedRoutes";
 import AdminProtectedRoute from "./AdminProtectedRoute";
@@ -123,6 +125,17 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <DancingPackageBooking />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/booking/dress-only"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <DressOnlyBookingPage />
             </MainLayout>
           </ProtectedRoute>
         }
@@ -239,8 +252,18 @@ const AppRoutes = () => {
           </AdminProtectedRoute>
         }
       />
+      <Route
+        path="/admin/dress-only-bookings"
+        element={
+          <AdminProtectedRoute>
+            <AdminLayout>
+              <DressOnlyBookingManager />
+            </AdminLayout>
+          </AdminProtectedRoute>
+        }
+      />
 
-{/*Catch-all for 404 Not Found */}
+      {/*Catch-all for 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

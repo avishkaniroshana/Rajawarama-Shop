@@ -53,15 +53,6 @@ public class AdminUserController {
         return ResponseEntity.ok(response);
     }
 
-//    @DeleteMapping("/hard/{userId}")
-//    public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID userId) {
-//        adminUserService.hardDeleteUser(userId);
-//
-//        Map<String, String> response = new HashMap<>();
-//        response.put("message", "User permanently deleted successfully");
-//
-//        return ResponseEntity.ok(response);
-//    }
 
     @DeleteMapping("/hard/{userId}")
     public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID userId) {
@@ -69,7 +60,7 @@ public class AdminUserController {
             adminUserService.hardDeleteUser(userId);
 
             Map<String, String> response = new HashMap<>();
-            response.put("message", "User permanently deleted successfully");
+            response.put("message", "User Permanently Deleted Successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();

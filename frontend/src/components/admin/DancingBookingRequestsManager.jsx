@@ -22,7 +22,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 const MySwal = withReactContent(Swal);
 
-/* ─── CSS (same design language as BookingRequestsManager) ── */
+/*  CSS (same design language as BookingRequestsManager) ── */
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root{
@@ -509,7 +509,7 @@ const BookingRow = ({
               </div>
               {booking.transportPrice && (
                 <div className="dab-price-grand">
-                  <span className="dab-price-grand-k">Grand Total</span>
+                  <span className="dab-price-grand-k">Final Total Bill</span>
                   <span className="dab-price-grand-v">
                     Rs.{" "}
                     {fmt(

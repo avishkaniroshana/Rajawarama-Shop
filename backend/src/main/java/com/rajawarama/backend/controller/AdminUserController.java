@@ -43,6 +43,12 @@ public class AdminUserController {
         return adminUserService.updateUser(userId, request);
     }
 
+    // PUT → /api/admin/users/restore/{userId}
+    @PutMapping("/restore/{userId}")
+    public ResponseEntity<UserResponse> restoreUser(@PathVariable UUID userId) {
+        return ResponseEntity.ok(adminUserService.restoreUser(userId));
+    }
+
     @DeleteMapping("/soft/{userId}")
     public ResponseEntity<Map<String, String>> softDelete(@PathVariable UUID userId) {
         adminUserService.softDeleteUser(userId);

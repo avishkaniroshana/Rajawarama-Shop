@@ -413,10 +413,10 @@ const BookingRow = ({ booking, onSetPrice, onApprove, onReject, onComplete }) =>
                 </span>
               </div>
 
-              {/* ── Grand total from DB — only shown when stored ── */}
+              {/* ── Final total from DB — only shown when stored ── */}
               {booking.grandTotal != null && (
                 <div className="ab-price-grand">
-                  <span className="ab-price-grand-k">Grand Total (incl. transport)</span>
+                  <span className="ab-price-grand-k">Final Total Bill (incl. transport)</span>
                   <span className="ab-price-grand-v">Rs. {fmt(booking.grandTotal)}</span>
                 </div>
               )}
@@ -436,7 +436,7 @@ const BookingRow = ({ booking, onSetPrice, onApprove, onReject, onComplete }) =>
   );
 };
 
-/* ─── Main Component ─────────────────────────────────────────────────── */
+/* ---------------------------------------- Main Component */
 const BookingRequestsManager = () => {
   const [bookings, setBookings]   = useState([]);
   const [loading, setLoading]     = useState(true);

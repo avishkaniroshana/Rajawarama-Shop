@@ -1,0 +1,338 @@
+package com.rajawarama.backend.controller;
+
+import com.rajawarama.backend.dto.ReportLoginResponse;
+import com.rajawarama.backend.entity.*;
+import com.rajawarama.backend.repository.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/admin/reports")
+@PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
+public class ReportController {
+
+    private final UserRepository                  userRepository;
+    private final RequestSpecialPackageRepository spBookingRepo;
+    private final RequestDancingPackageRepository dpBookingRepo;
+    private final RequestDressOnlyRepository      dobBookingRepo;
+    private final RefreshTokenRepository          refreshTokenRepo;
+
+
+    // GET /api/admin/reports/stats
+    // Returns aggregated booking + user stats as JSON (for charts)
+    // Query params: period=daily|weekly|monthly|yearly  from=  to=
+
+    //localhost:8080/api/admin/reports/stats
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats(
+            @RequestParam(defaultValue = "monthly") String period,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate fromDate = parseDate(from);
+        LocalDate toDate   = parseDate(to);
+
+        List<RequestSpecialPackage>  spList  = spBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), fromDate, toDate)).collect(Collectors.toList());
+        List<RequestDancingPackage>  dpList  = dpBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), fromDate, toDate)).collect(Collectors.toList());
+        List<RequestDressOnly>       dobList = dobBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), fromDate, toDate)).collect(Collectors.toList());
+
+        // Status breakdown per type
+        Map<String, Long> specialByStatus   = groupByStatus(spList.stream().map(b -> b.getStatus().name()).collect(Collectors.toList()));
+        Map<String, Long> dancingByStatus   = groupByStatus(dpList.stream().map(b -> b.getStatus().name()).collect(Collectors.toList()));
+        Map<String, Long> dressOnlyByStatus = groupByStatus(dobList.stream().map(b -> b.getStatus().name()).collect(Collectors.toList()));
+
+        // Totals
+        long totalSpecial   = spList.size();
+        long totalDancing   = dpList.size();
+        long totalDressOnly = dobList.size();
+        long totalCompleted = spList.stream().filter(b -> "COMPLETED".equals(b.getStatus().name())).count()
+                + dpList.stream().filter(b -> "COMPLETED".equals(b.getStatus().name())).count()
+                + dobList.stream().filter(b -> "COMPLETED".equals(b.getStatus().name())).count();
+
+        // Revenue (grand total where not null)
+        double spRevenue  = spList.stream().filter(b -> b.getGrandTotal() != null).mapToDouble(RequestSpecialPackage::getGrandTotal).sum();
+        double dpRevenue  = dpList.stream().filter(b -> b.getGrandTotal() != null).mapToDouble(RequestDancingPackage::getGrandTotal).sum();
+        double dobRevenue = dobList.stream().filter(b -> b.getGrandTotal() != null).mapToDouble(RequestDressOnly::getGrandTotal).sum();
+        double totalRevenue = spRevenue + dpRevenue + dobRevenue;
+
+        // Users
+        long totalUsers  = userRepository.count();
+        long activeUsers = userRepository.findAll().stream().filter(u -> !u.isDeleted()).count();
+
+        // Revenue grouped by period
+        Map<String, Double> revenueByPeriod = buildRevenueByPeriod(period, spList, dpList, dobList);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("specialByStatus",   specialByStatus);
+        result.put("dancingByStatus",   dancingByStatus);
+        result.put("dressOnlyByStatus", dressOnlyByStatus);
+        result.put("totalSpecial",      totalSpecial);
+        result.put("totalDancing",      totalDancing);
+        result.put("totalDressOnly",    totalDressOnly);
+        result.put("totalCompleted",    totalCompleted);
+        result.put("totalRevenue",      totalRevenue);
+        result.put("totalUsers",        totalUsers);
+        result.put("activeUsers",       activeUsers);
+        result.put("revenueByPeriod",   revenueByPeriod);
+        return ResponseEntity.ok(result);
+    }
+
+
+    // GET /api/admin/reports/logins  (JSON for table display)
+    //localhost:8080/api/admin/reports/logins
+    @GetMapping("/logins")
+    public ResponseEntity<List<ReportLoginResponse>> getLoginLogs(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate fromDate = parseDate(from);
+        LocalDate toDate   = parseDate(to);
+
+        List<ReportLoginResponse> logs = refreshTokenRepo.findAll().stream()
+                .filter(t -> inRange(t.getCreatedAt(), fromDate, toDate))
+                .sorted(Comparator.comparing(RefreshToken::getCreatedAt, Comparator.reverseOrder()))
+                .map(t -> ReportLoginResponse.builder()
+                        .userFullName(t.getUser().getFullName())
+                        .userEmail(t.getUser().getEmail())
+                        .role(t.getUser().getRole().name())
+                        .loginAt(t.getCreatedAt())
+                        .tokenExpiry(t.getExpiryDate())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(logs);
+    }
+
+
+    // CSV DOWNLOADS
+
+    // GET /api/admin/reports/users/csv
+    // localhost:8080/api/admin/reports/users/csv
+    @GetMapping("/users/csv")
+    public ResponseEntity<byte[]> usersCSV(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate f = parseDate(from), t = parseDate(to);
+        List<User> users = userRepository.findAll().stream()
+                .filter(u -> inRange(u.getCreatedAt(), f, t))
+                .sorted(Comparator.comparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Full Name,Email,Phone,Role,Status,Created At,Last Login\n");
+        for (User u : users) {
+            sb.append(row(
+                    u.getFullName(), u.getEmail(), u.getPhone(),
+                    u.getRole().name(),
+                    u.isDeleted() ? "Deactivated" : "Active",
+                    fmt(u.getCreatedAt()), fmt(u.getLastLogin())
+            )).append("\n");
+        }
+        return csvResponse("users_report", sb.toString());
+    }
+
+    // GET /api/admin/reports/special-bookings/csv
+    // localhost:8080/api/admin/reports/special-bookings/csv
+    @GetMapping("/special-bookings/csv")
+    public ResponseEntity<byte[]> specialBookingsCSV(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate f = parseDate(from), t = parseDate(to);
+        List<RequestSpecialPackage> list = spBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), f, t))
+                .sorted(Comparator.comparing(RequestSpecialPackage::getCreatedAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Request ID,Customer Name,Email,Package,Event Date,Hotel,City,Status,Subtotal (Rs.),Transport (Rs.),Grand Total (Rs.),Created At\n");
+        for (RequestSpecialPackage b : list) {
+            sb.append(row(
+                    b.getRequestId().toString(),
+                    b.getUser().getFullName(), b.getUser().getEmail(),
+                    b.getSpecialPackage().getName(),
+                    b.getEventDate().toString(), b.getHotelName(), b.getNearestCity(),
+                    b.getStatus().name(),
+                    money(b.getBookingSubtotal()), money(b.getTransportPrice()), money(b.getGrandTotal()),
+                    fmt(b.getCreatedAt())
+            )).append("\n");
+        }
+        return csvResponse("special_bookings_report", sb.toString());
+    }
+
+    // GET /api/admin/reports/dancing-bookings/csv
+    //localhost:8080/api/admin/reports/dancing-bookings/csv
+    @GetMapping("/dancing-bookings/csv")
+    public ResponseEntity<byte[]> dancingBookingsCSV(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate f = parseDate(from), t = parseDate(to);
+        List<RequestDancingPackage> list = dpBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), f, t))
+                .sorted(Comparator.comparing(RequestDancingPackage::getCreatedAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Request ID,Customer Name,Email,Package,Event Date,Hotel,City,Status,Subtotal (Rs.),Transport (Rs.),Grand Total (Rs.),Created At\n");
+        for (RequestDancingPackage b : list) {
+            sb.append(row(
+                    b.getRequestId().toString(),
+                    b.getUser().getFullName(), b.getUser().getEmail(),
+                    b.getDancingPackage().getName(),
+                    b.getEventDate().toString(), b.getHotelName(), b.getNearestCity(),
+                    b.getStatus().name(),
+                    money(b.getBookingSubtotal()), money(b.getTransportPrice()), money(b.getGrandTotal()),
+                    fmt(b.getCreatedAt())
+            )).append("\n");
+        }
+        return csvResponse("dancing_bookings_report", sb.toString());
+    }
+
+    // GET /api/admin/reports/dress-only-bookings/csv
+    //localhost:8080/api/admin/reports/dress-only-bookings/csv
+    @GetMapping("/dress-only-bookings/csv")
+    public ResponseEntity<byte[]> dressOnlyBookingsCSV(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate f = parseDate(from), t = parseDate(to);
+        List<RequestDressOnly> list = dobBookingRepo.findAll().stream()
+                .filter(b -> inRange(b.getCreatedAt(), f, t))
+                .sorted(Comparator.comparing(RequestDressOnly::getCreatedAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Request ID,Customer Name,Email,Event Date,Hotel,City,Status,Subtotal (Rs.),Transport (Rs.),Grand Total (Rs.),Created At\n");
+        for (RequestDressOnly b : list) {
+            sb.append(row(
+                    b.getRequestId().toString(),
+                    b.getUser().getFullName(), b.getUser().getEmail(),
+                    b.getEventDate().toString(), b.getHotelName(), b.getNearestCity(),
+                    b.getStatus().name(),
+                    money(b.getBookingSubtotal()), money(b.getTransportPrice()), money(b.getGrandTotal()),
+                    fmt(b.getCreatedAt())
+            )).append("\n");
+        }
+        return csvResponse("dress_only_bookings_report", sb.toString());
+    }
+
+    // GET /api/admin/reports/logins/csv
+    // localhost:8080/api/admin/reports/logins/csv
+    @GetMapping("/logins/csv")
+    public ResponseEntity<byte[]> loginsCSV(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        LocalDate f = parseDate(from), t = parseDate(to);
+        List<RefreshToken> tokens = refreshTokenRepo.findAll().stream()
+                .filter(tk -> inRange(tk.getCreatedAt(), f, t))
+                .sorted(Comparator.comparing(RefreshToken::getCreatedAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Full Name,Email,Role,Login At,Token Expiry\n");
+        for (RefreshToken tk : tokens) {
+            sb.append(row(
+                    tk.getUser().getFullName(), tk.getUser().getEmail(),
+                    tk.getUser().getRole().name(),
+                    fmt(tk.getCreatedAt()), fmt(tk.getExpiryDate())
+            )).append("\n");
+        }
+        return csvResponse("login_history_report", sb.toString());
+    }
+
+
+    // PRIVATE HELPERS
+
+
+    private boolean inRange(LocalDateTime dt, LocalDate from, LocalDate to) {
+        if (dt == null)   return true;
+        LocalDate d = dt.toLocalDate();
+        if (from != null && d.isBefore(from)) return false;
+        if (to   != null && d.isAfter(to))    return false;
+        return true;
+    }
+
+    private LocalDate parseDate(String s) {
+        if (s == null || s.isBlank()) return null;
+        try { return LocalDate.parse(s); } catch (Exception e) { return null; }
+    }
+
+    private Map<String, Long> groupByStatus(List<String> statuses) {
+        return statuses.stream().collect(Collectors.groupingBy(s -> s, Collectors.counting()));
+    }
+
+    /** Group combined revenue by daily / weekly / monthly / yearly label */
+    private Map<String, Double> buildRevenueByPeriod(
+            String period,
+            List<RequestSpecialPackage>  spList,
+            List<RequestDancingPackage>  dpList,
+            List<RequestDressOnly>       dobList
+    ) {
+        // Collect all (date, amount) pairs
+        List<Map.Entry<LocalDateTime, Double>> all = new ArrayList<>();
+        spList.stream().filter(b -> b.getGrandTotal() != null)
+                .forEach(b -> all.add(Map.entry(b.getCreatedAt(), b.getGrandTotal())));
+        dpList.stream().filter(b -> b.getGrandTotal() != null)
+                .forEach(b -> all.add(Map.entry(b.getCreatedAt(), b.getGrandTotal())));
+        dobList.stream().filter(b -> b.getGrandTotal() != null)
+                .forEach(b -> all.add(Map.entry(b.getCreatedAt(), b.getGrandTotal())));
+
+        Map<String, Double> map = new TreeMap<>();
+        for (Map.Entry<LocalDateTime, Double> e : all) {
+            String key = switch (period) {
+                case "daily"   -> e.getKey().format(DateTimeFormatter.ofPattern("MMM dd"));
+                case "weekly"  -> "W" + e.getKey().format(DateTimeFormatter.ofPattern("ww yyyy"));
+                case "yearly"  -> e.getKey().format(DateTimeFormatter.ofPattern("yyyy"));
+                default        -> e.getKey().format(DateTimeFormatter.ofPattern("MMM yyyy")); // monthly
+            };
+            map.merge(key, e.getValue(), Double::sum);
+        }
+        return map;
+    }
+
+    private String fmt(LocalDateTime dt) {
+        return dt != null ? dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "";
+    }
+
+    private String money(Double d) {
+        return d != null ? String.format("%.2f", d) : "0.00";
+    }
+
+    private String row(String... values) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+            String v = values[i] == null ? "" : values[i].replace("\"", "\"\"");
+            sb.append('"').append(v).append('"');
+            if (i < values.length - 1) sb.append(',');
+        }
+        return sb.toString();
+    }
+
+    private ResponseEntity<byte[]> csvResponse(String filename, String content) {
+        // BOM so Excel opens it correctly
+        byte[] bytes = ("\uFEFF" + content).getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "_" + LocalDate.now() + ".csv\"")
+                .body(bytes);
+    }
+}

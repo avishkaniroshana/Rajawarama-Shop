@@ -26,16 +26,24 @@ const NAV_ITEMS = [
   { to: "/", label: "Home", icon: Home, isExternal: true },
   { to: "/profile", label: "My Profile", icon: User, isExternal: false }, // ← Important: Not external
 
-  { to: "/admin/users", label: "Users", icon: Users },
-  { to: "/admin/categories", label: "Categories", icon: Tag },
-  { to: "/admin/dress-items", label: "Dress Items", icon: Shirt },
+  { to: "/admin/users", label: "Users Management", icon: Users },
+  { to: "/admin/categories", label: "Category Management", icon: Tag },
+  { to: "/admin/dress-items", label: "Dress Management", icon: Shirt },
   {
     to: "/admin/dancing-performer-types",
     label: "Dancing Performers ",
     icon: Music,
   },
-  { to: "/admin/special-item-types", label: "Special Package Items", icon: Star },
-  { to: "/admin/dancing-packages", label: "Dancing Group Packages", icon: Drum },
+  {
+    to: "/admin/special-item-types",
+    label: "Special Package Items",
+    icon: Star,
+  },
+  {
+    to: "/admin/dancing-packages",
+    label: "Dancing Group Packages",
+    icon: Drum,
+  },
   { to: "/admin/special-packages", label: "Special Packages", icon: Package },
   {
     to: "/admin/booking-requests",

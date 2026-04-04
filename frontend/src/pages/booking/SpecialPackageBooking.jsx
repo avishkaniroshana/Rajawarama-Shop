@@ -9,7 +9,7 @@ import {
   Clock,
   FileText,
   Shirt,
-  Music2,
+  Drum,
   Plus,
   Trash2,
   ChevronRight,
@@ -727,7 +727,7 @@ const SpecialPackageBooking = () => {
                       )}
                       {pkg.linkedDancingPackageName && (
                         <span className="bk-badge dance">
-                          <Music2 size={9} /> {pkg.linkedDancingPackageName}
+                          <Drum size={9} /> {pkg.linkedDancingPackageName}
                         </span>
                       )}
                       {pkg.discountPercent > 0 && (
@@ -755,7 +755,7 @@ const SpecialPackageBooking = () => {
           </>
         )}
 
-        {/* ════ STEP 1 — Event Details ════ */}
+        {/*  STEP 1 — Event Details  */}
         {step === 1 && (
           <>
             <h2 className="bk-section-title">Event Details</h2>
@@ -881,7 +881,7 @@ const SpecialPackageBooking = () => {
           </>
         )}
 
-        {/* ════ STEP 2 — Dress Selections ════ */}
+        {/*  STEP 2 — Dress Selections  */}
         {step === 2 && (
           <>
             <h2 className="bk-section-title">Dress Selections</h2>
@@ -917,7 +917,7 @@ const SpecialPackageBooking = () => {
                   ))}
                 </select>
               </div>
-              {/* ── Price hint ── */}
+              {/*  Price hint  */}
               {groomDress && getDressPriceHint(groomDress, "GROOM") && (
                 <p className="bk-dress-price-hint">
                   <Shirt size={12} /> Groom dressing:{" "}
@@ -1065,7 +1065,7 @@ const SpecialPackageBooking = () => {
           </>
         )}
 
-        {/* ════ STEP 3 — Dancing Package ════ */}
+        {/*  STEP 3 — Dancing Package  */}
         {step === 3 && (
           <>
             <h2 className="bk-section-title">Dancing Package</h2>
@@ -1075,7 +1075,7 @@ const SpecialPackageBooking = () => {
             </p>
             {selectedPkg?.linkedDancingPackageName && (
               <div className="bk-info">
-                <Music2
+                <Drum
                   size={14}
                   style={{
                     flexShrink: 0,
@@ -1278,7 +1278,7 @@ const SpecialPackageBooking = () => {
           </>
         )}
 
-        {/* ════ STEP 4 — Review & Submit ════ */}
+        {/*  STEP 4 — Review & Submit  */}
         {step === 4 && (
           <>
             <h2 className="bk-section-title">Review & Submit</h2>
@@ -1407,7 +1407,7 @@ const SpecialPackageBooking = () => {
             {/* Dancing */}
             <div className="bk-review-card">
               <div className="bk-review-head">
-                <Music2 size={12} /> Dancing Package
+                <Drum size={12} /> Dancing Package
               </div>
               <div className="bk-review-body">
                 {selectedDancingPkg ? (
@@ -1507,7 +1507,7 @@ const SpecialPackageBooking = () => {
               </div>
             </div>
 
-            {/* ── Pricing Summary ── */}
+            {/*  Pricing Summary  */}
             <div className="bk-review-card">
               <div className="bk-review-head">💰 Pricing Summary</div>
               <div className="bk-review-body">
@@ -1517,7 +1517,7 @@ const SpecialPackageBooking = () => {
                     Rs. {fmt(basePackagePrice)}
                   </span>
                 </div>
-                {/* ── NEW: Dress category adjustment ── */}
+                {/*  NEW: Dress category adjustment  */}
                 {dressPriceAdjustment !== 0 && (
                   <div className="bk-review-row">
                     <span className="bk-review-key">
@@ -1586,7 +1586,7 @@ const SpecialPackageBooking = () => {
           </>
         )}
 
-        {/* ── Navigation ── */}
+        {/*  Navigation  */}
         <div className="bk-nav">
           <button
             className="bk-back-btn"

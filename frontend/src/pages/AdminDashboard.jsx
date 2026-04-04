@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-  Package, Users, Tags, Shirt, Footprints, Music2,
-  ClipboardList, Crown, HatGlasses, Drum, Star,
+  Package, Users, Tags, Shirt,Drum, Music, File,
+  ClipboardList, Crown, HatGlasses, Star,
 } from "lucide-react";
 
 const CSS = `
@@ -88,13 +88,14 @@ const ITEMS = [
   { title:"User Management",         description:"Manage customer & administrator accounts, roles and access privileges",       path:"/admin/users",                    icon:<Users size={26}/>,        num:"01" },
   { title:"Category Management",     description:"Create and organize product and service categories efficiently",               path:"/admin/categories",               icon:<Tags size={26}/>,         num:"02" },
   { title:"Dress Items Management",  description:"Manage traditional costumes, inventory and availability",                     path:"/admin/dress-items",              icon:<Shirt size={26}/>,        num:"03" },
-  { title:"Dancing Performers",      description:"Manage performers, their unit prices and availability windows",                path:"/admin/dancing-performer-types",  icon:<Footprints size={26}/>,   num:"04" },
+  { title:"Dancing Performers",      description:"Manage performers, their unit prices and availability windows",                path:"/admin/dancing-performer-types",  icon:<Music size={26}/>,   num:"04" },
   { title:"Special Package Items",   description:"Configure individual items included in premium special packages",             path:"/admin/special-item-types",       icon:<Star size={26}/>,         num:"05" },
   { title:"Special Packages",        description:"Build and manage premium wedding and ceremonial bundles",                     path:"/admin/special-packages",         icon:<Package size={26}/>,      num:"06" },
   { title:"Dancing Group Packages",  description:"Manage Kandyan and cultural dance group performance packages",                path:"/admin/dancing-packages",         icon:<Drum size={26}/>,         num:"07" },
-  { title:"Special Pkg Bookings",    description:"View and process booking requests for all special packages",                  path:"/admin/booking-requests",         icon:<ClipboardList size={26}/>,num:"08" },
-  { title:"Dancing Group Bookings",  description:"Manage bookings for dance performances and cultural groups",                  path:"/admin/dancing-booking-requests", icon:<Music2 size={26}/>,       num:"09" },
+  { title:"Special Package Bookings",    description:"View and process booking requests for all special packages",                  path:"/admin/booking-requests",         icon:<ClipboardList size={26}/>,num:"08" },
+  { title:"Dancing Group Bookings",  description:"Manage bookings for dance performances and cultural groups",                  path:"/admin/dancing-booking-requests", icon:<ClipboardList size={26}/>,       num:"09" },
   { title:"Dress Bookings",          description:"Handle dress-only reservations, fittings and rental requests",                path:"/admin/dress-only-bookings",      icon:<HatGlasses size={26}/>,   num:"10" },
+  { title:"Reports & Analytics",        description:"View sales reports, customer insights and performance metrics",             path:"/admin/reports",                  icon:<File size={26}/>,         num:"11" },
 ];
 
 /* ----------------------------- Decorative SVG components  */

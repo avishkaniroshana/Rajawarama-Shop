@@ -35,6 +35,8 @@ import SpecialItemTypeManager from "../components/admin/SpecialItemTypeManager";
 import BookingRequestsManager from "../components/admin/BookingRequestsManager";
 import DancingBookingRequestsManager from "../components/admin/DancingBookingRequestsManager";
 import DressOnlyBookingManager from "../components/admin/DressOnlyBookingManager";
+import AdminReportsPage from "../components/admin/AdminReports";
+
 
 import ProtectedRoute from "./ProtectedRoutes";
 import AdminProtectedRoute from "./AdminProtectedRoute";
@@ -258,6 +260,16 @@ const AppRoutes = () => {
           <AdminProtectedRoute>
             <AdminLayout>
               <DressOnlyBookingManager />
+            </AdminLayout>
+          </AdminProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <AdminProtectedRoute>
+            <AdminLayout>
+              <AdminReportsPage />
             </AdminLayout>
           </AdminProtectedRoute>
         }

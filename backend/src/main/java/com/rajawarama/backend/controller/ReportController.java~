@@ -29,12 +29,11 @@ public class ReportController {
     private final RequestDressOnlyRepository      dobBookingRepo;
     private final RefreshTokenRepository          refreshTokenRepo;
 
-
+    // ─────────────────────────────────────────────────────────
     // GET /api/admin/reports/stats
     // Returns aggregated booking + user stats as JSON (for charts)
     // Query params: period=daily|weekly|monthly|yearly  from=  to=
-
-    //localhost:8080/api/admin/reports/stats
+    // ─────────────────────────────────────────────────────────
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats(
             @RequestParam(defaultValue = "monthly") String period,
@@ -92,9 +91,9 @@ public class ReportController {
         return ResponseEntity.ok(result);
     }
 
-
+    // ─────────────────────────────────────────────────────────
     // GET /api/admin/reports/logins  (JSON for table display)
-    //localhost:8080/api/admin/reports/logins
+    // ─────────────────────────────────────────────────────────
     @GetMapping("/logins")
     public ResponseEntity<List<ReportLoginResponse>> getLoginLogs(
             @RequestParam(required = false) String from,
@@ -118,11 +117,11 @@ public class ReportController {
         return ResponseEntity.ok(logs);
     }
 
-
+    // ─────────────────────────────────────────────────────────
     // CSV DOWNLOADS
+    // ─────────────────────────────────────────────────────────
 
     // GET /api/admin/reports/users/csv
-    // localhost:8080/api/admin/reports/users/csv
     @GetMapping("/users/csv")
     public ResponseEntity<byte[]> usersCSV(
             @RequestParam(required = false) String from,
@@ -148,7 +147,6 @@ public class ReportController {
     }
 
     // GET /api/admin/reports/special-bookings/csv
-    // localhost:8080/api/admin/reports/special-bookings/csv
     @GetMapping("/special-bookings/csv")
     public ResponseEntity<byte[]> specialBookingsCSV(
             @RequestParam(required = false) String from,
@@ -177,7 +175,6 @@ public class ReportController {
     }
 
     // GET /api/admin/reports/dancing-bookings/csv
-    //localhost:8080/api/admin/reports/dancing-bookings/csv
     @GetMapping("/dancing-bookings/csv")
     public ResponseEntity<byte[]> dancingBookingsCSV(
             @RequestParam(required = false) String from,
@@ -206,7 +203,6 @@ public class ReportController {
     }
 
     // GET /api/admin/reports/dress-only-bookings/csv
-    //localhost:8080/api/admin/reports/dress-only-bookings/csv
     @GetMapping("/dress-only-bookings/csv")
     public ResponseEntity<byte[]> dressOnlyBookingsCSV(
             @RequestParam(required = false) String from,
@@ -234,7 +230,6 @@ public class ReportController {
     }
 
     // GET /api/admin/reports/logins/csv
-    // localhost:8080/api/admin/reports/logins/csv
     @GetMapping("/logins/csv")
     public ResponseEntity<byte[]> loginsCSV(
             @RequestParam(required = false) String from,
@@ -258,9 +253,9 @@ public class ReportController {
         return csvResponse("login_history_report", sb.toString());
     }
 
-
+    // ─────────────────────────────────────────────────────────
     // PRIVATE HELPERS
-
+    // ─────────────────────────────────────────────────────────
 
     private boolean inRange(LocalDateTime dt, LocalDate from, LocalDate to) {
         if (dt == null)   return true;

@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toastSuccess, toastError } from "../../utils/toast";
+import { useAuth } from "../../context/AuthContext";
 import {
   Sparkles, MapPin, Calendar, ChevronDown, ChevronUp,
   Check, X, Drum, Shirt, Phone, Users, Crown, User,
-  RefreshCw, Plus, FileText, Truck,
+  RefreshCw, Plus, FileText, Truck, ShieldAlert,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 const MySwal = withReactContent(Swal);
 
+/*  CSS (same as before, condensed)  */
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root{--crimson:#8B1A1A;--crimson-l:#B22222;--crimson-glow:rgba(139,26,26,.08);
@@ -42,11 +44,7 @@ const STYLES = `
     cursor:pointer;transition:box-shadow .22s,transform .18s;text-decoration:none}
   .mb-new-btn:hover{box-shadow:0 4px 18px rgba(139,26,26,.32);transform:translateY(-1px)}
   .mb-new-btn.indigo{background:linear-gradient(135deg,var(--indigo),#4338CA)}
-  .mb-new-btn.indigo:hover{box-shadow:0 4px 18px rgba(55,48,163,.32)}
   .mb-new-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--text)}
-  .mb-new-btn.gold:hover{box-shadow:0 4px 18px rgba(201,168,76,.40)}
-
-  /* Type switch */
   .mb-type-switch{display:flex;gap:6px;margin-bottom:22px;padding:4px;
     background:rgba(201,168,76,.08);border:1px solid var(--border);border-radius:10px;width:fit-content;flex-wrap:wrap}
   .mb-type-btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;
@@ -55,8 +53,7 @@ const STYLES = `
   .mb-type-btn:not(.active):hover{color:var(--text)}
   .mb-type-btn.special.active{background:linear-gradient(135deg,var(--crimson),#9B2335);color:#fff;box-shadow:0 2px 12px rgba(139,26,26,.28)}
   .mb-type-btn.dancing.active{background:linear-gradient(135deg,var(--indigo),#4338CA);color:#fff;box-shadow:0 2px 12px rgba(55,48,163,.28)}
-  .mb-type-btn.dress.active{background:linear-gradient(135deg,var(--gold),#E2C56A);color:var(--text);box-shadow:0 2px 12px rgba(201,168,76,.30)}
-
+  .mb-type-btn.dress.active{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--text);box-shadow:0 2px 12px rgba(201,168,76,.30)}
   .mb-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:28px}
   .mb-tab{padding:7px 14px;border-radius:40px;border:1px solid var(--border);background:transparent;
     font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;letter-spacing:.06em;
@@ -66,7 +63,6 @@ const STYLES = `
   .mb-tab.PRICE_SET.active{background:var(--indigo)}.mb-tab.ACCEPTED_WITH_PRICE.active{background:var(--green)}
   .mb-tab.CANCELLED.active{background:#64748B}.mb-tab.APPROVED.active{background:var(--green)}
   .mb-tab.REJECTED.active{background:var(--crimson)}.mb-tab.COMPLETED.active{background:#7C3AED}
-
   .mb-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;
     margin-bottom:18px;box-shadow:0 2px 0 rgba(201,168,76,.12),0 4px 20px rgba(139,26,26,.04);transition:box-shadow .25s}
   .mb-card:hover{box-shadow:0 2px 0 rgba(201,168,76,.18),0 8px 32px rgba(139,26,26,.07)}
@@ -105,23 +101,18 @@ const STYLES = `
     font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
   .mb-cancel-btn:hover{background:rgba(139,26,26,.14)}
   .mb-pricing-section{padding:16px 22px;border-top:1px solid var(--border);background:rgba(139,26,26,.015)}
-  .mb-pricing-title{font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
-    color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-  .mb-pricing-line{display:flex;justify-content:space-between;align-items:center;
-    padding:5px 0;border-bottom:1px solid rgba(201,168,76,.08);gap:16px}
+  .mb-pricing-title{font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  .mb-pricing-line{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(201,168,76,.08);gap:16px}
   .mb-pricing-line:last-child{border-bottom:none}
   .mb-pricing-line-k{font-size:.78rem;color:var(--muted)}
   .mb-pricing-line-v{font-size:.82rem;color:var(--text);font-weight:500;text-align:right;white-space:nowrap}
-  .mb-pricing-subtotal{display:flex;justify-content:space-between;align-items:center;
-    padding:10px 0 6px;margin-top:6px;border-top:2px solid rgba(201,168,76,.22);gap:16px}
+  .mb-pricing-subtotal{display:flex;justify-content:space-between;align-items:center;padding:10px 0 6px;margin-top:6px;border-top:2px solid rgba(201,168,76,.22);gap:16px}
   .mb-pricing-subtotal-k{font-size:.72rem;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:var(--muted)}
   .mb-pricing-subtotal-v{font-family:'Cormorant Garamond',serif;font-size:1.30rem;font-weight:700;color:var(--crimson)}
-  .mb-pricing-transport{display:flex;justify-content:space-between;align-items:center;
-    padding:8px 0 5px;border-top:1px dashed rgba(201,168,76,.25);margin-top:4px;gap:16px}
+  .mb-pricing-transport{display:flex;justify-content:space-between;align-items:center;padding:8px 0 5px;border-top:1px dashed rgba(201,168,76,.25);margin-top:4px;gap:16px}
   .mb-pricing-transport-k{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:5px}
   .mb-pricing-transport-v{font-size:.85rem;font-weight:600;text-align:right;color:var(--indigo)}
-  .mb-pricing-grand{display:flex;justify-content:space-between;align-items:center;
-    padding:10px 0 2px;border-top:2px solid rgba(139,26,26,.18);margin-top:2px;gap:16px}
+  .mb-pricing-grand{display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:2px solid rgba(139,26,26,.18);margin-top:2px;gap:16px}
   .mb-pricing-grand-k{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text)}
   .mb-pricing-grand-v{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--crimson)}
   .mb-toggle{width:100%;padding:11px 22px;background:none;border:none;border-top:1px solid var(--border);
@@ -132,9 +123,8 @@ const STYLES = `
   .mb-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media(max-width:600px){.mb-detail-grid{grid-template-columns:1fr}}
   .mb-detail-section{margin-bottom:16px}
-  .mb-detail-section-title{font-size:.65rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:5px;
-    padding-bottom:7px;border-bottom:1px solid rgba(201,168,76,.18)}
+  .mb-detail-section-title{font-size:.65rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);
+    margin-bottom:10px;display:flex;align-items:center;gap:5px;padding-bottom:7px;border-bottom:1px solid rgba(201,168,76,.18)}
   .mb-detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;gap:12px}
   .mb-detail-key{font-size:.78rem;color:var(--muted);flex-shrink:0}
   .mb-detail-val{font-size:.82rem;color:var(--text);font-weight:500;text-align:right}
@@ -152,67 +142,75 @@ const STYLES = `
     border:1px solid rgba(139,26,26,.14);display:flex;align-items:center;justify-content:center;color:var(--crimson)}
   .mb-empty-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:8px}
   .mb-empty-text{font-size:.85rem;color:var(--muted);font-weight:300;margin-bottom:24px}
+  /* Admin notice */
+  .mb-admin-notice{max-width:520px;margin:60px auto;text-align:center;padding:40px 32px;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 2px 0 rgba(201,168,76,.10),0 8px 32px rgba(28,16,8,.05)}
+  .mb-admin-notice-icon{width:64px;height:64px;border-radius:14px;margin:0 auto 18px;
+    background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.28);
+    display:flex;align-items:center;justify-content:center;color:var(--gold)}
+  .mb-admin-notice-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--text);margin-bottom:8px}
+  .mb-admin-notice-text{font-size:.85rem;color:var(--muted);line-height:1.65;margin-bottom:22px}
+  .mb-admin-notice-link{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;
+    background:var(--crimson);color:#fff;text-decoration:none;font-family:'DM Sans',sans-serif;
+    font-size:.80rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;transition:box-shadow .2s}
+  .mb-admin-notice-link:hover{box-shadow:0 4px 16px rgba(139,26,26,.30)}
 `;
 
-/* ─── Helpers ──────────────────────────────────────────── */
-const fmt = (n) => new Intl.NumberFormat("en-LK").format(n||0);
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-LK",
-  { year:"numeric", month:"long", day:"numeric" }) : "—";
+const fmt = (n) => new Intl.NumberFormat("en-LK").format(n || 0);
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString("en-LK", { year:"numeric", month:"long", day:"numeric" })
+  : "—";
 
 const STATUS_LABELS = {
   PENDING:"Pending Review", PRICE_SET:"Price Set", ACCEPTED_WITH_PRICE:"Accepted",
   CANCELLED:"Cancelled", APPROVED:"Approved", REJECTED:"Rejected", COMPLETED:"Completed",
 };
 const STATUS_ICONS = {
-  PENDING:"⏳", PRICE_SET:"💰", ACCEPTED_WITH_PRICE:"✅",
-  CANCELLED:"✖", APPROVED:"🎉", REJECTED:"❌", COMPLETED:"🏆",
+  PENDING: "🕒", 
+  PRICE_SET: "💲", 
+  ACCEPTED_WITH_PRICE: "✅", 
+  CANCELLED: "🚫", 
+  APPROVED: "✔️", 
+  REJECTED: "❌",
+  COMPLETED: "🏆",
 };
 const ALL_STATUSES = ["ALL","PENDING","PRICE_SET","ACCEPTED_WITH_PRICE","CANCELLED","APPROVED","REJECTED","COMPLETED"];
 
-/* ─── Shared Pricing Section ─────────────────────────── */
+/*  Shared helpers  */
 const PricingSection = ({ booking, accentColor="var(--crimson)" }) => (
   <div className="mb-pricing-section">
     <div className="mb-pricing-title">💰 Pricing Summary</div>
-    {(booking.specialPackageFinalPrice||booking.dancingPackageBasePrice) && (
+    {(booking.specialPackageFinalPrice || booking.dancingPackageBasePrice) && (
       <div className="mb-pricing-line">
         <span className="mb-pricing-line-k">Base Price</span>
-        <span className="mb-pricing-line-v">
-          Rs. {fmt(booking.specialPackageFinalPrice ?? booking.dancingPackageBasePrice)}
-        </span>
+        <span className="mb-pricing-line-v">Rs. {fmt(booking.specialPackageFinalPrice ?? booking.dancingPackageBasePrice)}</span>
       </div>
     )}
     {booking.selectedDancingPackage && (
       <div className="mb-pricing-line">
         <span className="mb-pricing-line-k">Dancing — {booking.selectedDancingPackage.name}</span>
-        <span className="mb-pricing-line-v" style={{ color:"var(--indigo)" }}>
-          Rs. {fmt(booking.selectedDancingPackage.totalPrice)}
-        </span>
+        <span className="mb-pricing-line-v" style={{ color:"var(--indigo)" }}>Rs. {fmt(booking.selectedDancingPackage.totalPrice)}</span>
       </div>
     )}
     {(booking.extraPerformers||[]).map((ep,i) => (
       <div key={i} className="mb-pricing-line">
         <span className="mb-pricing-line-k">{ep.quantity} × {ep.performerTypeName}</span>
-        <span className="mb-pricing-line-v" style={{ color:"var(--crimson)" }}>
-          + Rs. {fmt(ep.pricePerUnit * ep.quantity)}
-        </span>
+        <span className="mb-pricing-line-v" style={{ color:"var(--crimson)" }}>+ Rs. {fmt(ep.pricePerUnit * ep.quantity)}</span>
       </div>
     ))}
     <div className="mb-pricing-subtotal">
       <span className="mb-pricing-subtotal-k">Booking Subtotal</span>
-      <span className="mb-pricing-subtotal-v" style={{ color:accentColor }}>
-        Rs. {fmt(booking.bookingSubtotal)}
-      </span>
+      <span className="mb-pricing-subtotal-v" style={{ color:accentColor }}>Rs. {fmt(booking.bookingSubtotal)}</span>
     </div>
     <div className="mb-pricing-transport">
       <span className="mb-pricing-transport-k">
         <Truck size={12}/> Transport Price
         {booking.status==="PENDING" && <span style={{ color:"var(--subtle)",fontSize:".70rem" }}>&nbsp;(to be set)</span>}
       </span>
-      <span className="mb-pricing-transport-v">
-        {booking.transportPrice!=null ? `Rs. ${fmt(booking.transportPrice)}` : "—"}
-      </span>
+      <span className="mb-pricing-transport-v">{booking.transportPrice != null ? `Rs. ${fmt(booking.transportPrice)}` : "—"}</span>
     </div>
-    {booking.grandTotal!=null && (
+    {booking.grandTotal != null && (
       <div className="mb-pricing-grand">
         <span className="mb-pricing-grand-k">Final Total Bill</span>
         <span className="mb-pricing-grand-v">Rs. {fmt(booking.grandTotal)}</span>
@@ -221,49 +219,42 @@ const PricingSection = ({ booking, accentColor="var(--crimson)" }) => (
   </div>
 );
 
-/* ─── Price Accept/Cancel Box ────────────────────────── */
 const PriceBox = ({ booking, onAccept, onCancel }) => {
   if (booking.status==="PRICE_SET") return (
     <div className="mb-price-box">
       <div>
         <div className="mb-price-label">Transport Price — Please Review</div>
         <div className="mb-price-val">Rs. {fmt(booking.transportPrice)}</div>
-        {booking.grandTotal!=null && (
+        {booking.grandTotal != null && (
           <div style={{ fontSize:".72rem",color:"var(--muted)",marginTop:"3px" }}>
             Final Total Bill: <strong style={{ color:"var(--text)" }}>Rs. {fmt(booking.grandTotal)}</strong>
           </div>
         )}
       </div>
       <div className="mb-price-actions">
-        <button className="mb-accept-btn" onClick={() => onAccept(booking.requestId)}>
-          <Check size={13}/> Accept
-        </button>
-        <button className="mb-cancel-btn" onClick={() => onCancel(booking.requestId)}>
-          <X size={13}/> Decline
-        </button>
+        <button className="mb-accept-btn" onClick={() => onAccept(booking.requestId)}><Check size={13}/> Accept</button>
+        <button className="mb-cancel-btn" onClick={() => onCancel(booking.requestId)}><X size={13}/> Decline</button>
       </div>
     </div>
   );
-  if (["ACCEPTED_WITH_PRICE","APPROVED","COMPLETED"].includes(booking.status) && booking.transportPrice!=null) return (
+  if (["ACCEPTED_WITH_PRICE","APPROVED","COMPLETED"].includes(booking.status) && booking.transportPrice != null) return (
     <div className="mb-price-box">
       <div>
         <div className="mb-price-label">Transport Price (Accepted)</div>
         <div className="mb-price-val">Rs. {fmt(booking.transportPrice)}</div>
-        {booking.grandTotal!=null && (
+        {booking.grandTotal != null && (
           <div style={{ fontSize:".72rem",color:"var(--muted)",marginTop:"3px" }}>
             Final Total Bill: <strong style={{ color:"var(--text)" }}>Rs. {fmt(booking.grandTotal)}</strong>
           </div>
         )}
       </div>
-      <span className="mb-status ACCEPTED_WITH_PRICE" style={{ alignSelf:"center" }}>
-        <Check size={11}/> Accepted
-      </span>
+      <span className="mb-status ACCEPTED_WITH_PRICE" style={{ alignSelf:"center" }}><Check size={11}/> Accepted</span>
     </div>
   );
   return null;
 };
 
-/* ─── Special Package Booking Card ────────────────────── */
+/*  Special booking card  */
 const BookingCard = ({ booking, onAcceptPrice, onCancel }) => {
   const [expanded,setExpanded] = useState(false);
   return (
@@ -278,15 +269,12 @@ const BookingCard = ({ booking, onAcceptPrice, onCancel }) => {
             <span className="mb-card-meta-item"><Phone size={11}/> {booking.contactNo}</span>
           </div>
         </div>
-        <span className={`mb-status ${booking.status}`}>
-          {STATUS_ICONS[booking.status]} {STATUS_LABELS[booking.status]}
-        </span>
+        <span className={`mb-status ${booking.status}`}>{STATUS_ICONS[booking.status]} {STATUS_LABELS[booking.status]}</span>
       </div>
       <PricingSection booking={booking}/>
       <PriceBox booking={booking} onAccept={onAcceptPrice} onCancel={onCancel}/>
       <button className="mb-toggle" onClick={()=>setExpanded(!expanded)}>
-        <span>View Details</span>
-        {expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
+        <span>View Details</span>{expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
       </button>
       {expanded && (
         <div className="mb-details">
@@ -297,37 +285,15 @@ const BookingCard = ({ booking, onAcceptPrice, onCancel }) => {
                 ["Contact",booking.contactNo],["Groom Arrival",booking.groomArrivalTime||"—"],
                 ["Poruwa Start",booking.poruwaStartTime||"—"]
               ].map(([k,v])=>(
-                <div key={k} className="mb-detail-row">
-                  <span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span>
-                </div>
+                <div key={k} className="mb-detail-row"><span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span></div>
               ))}
-              {booking.specialNotes && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Notes</span>
-                  <span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span>
-                </div>
-              )}
+              {booking.specialNotes && <div className="mb-detail-row"><span className="mb-detail-key">Notes</span><span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span></div>}
             </div>
             <div className="mb-detail-section">
               <div className="mb-detail-section-title"><Sparkles size={10}/> Price Breakdown</div>
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Subtotal</span>
-                <span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>
-                  Rs. {fmt(booking.bookingSubtotal)}
-                </span>
-              </div>
-              {booking.grandTotal!=null && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Grand Total</span>
-                  <span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>
-                    Rs. {fmt(booking.grandTotal)}
-                  </span>
-                </div>
-              )}
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Submitted</span>
-                <span className="mb-detail-val">{fmtDate(booking.createdAt)}</span>
-              </div>
+              <div className="mb-detail-row"><span className="mb-detail-key">Subtotal</span><span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.bookingSubtotal)}</span></div>
+              {booking.grandTotal!=null && <div className="mb-detail-row"><span className="mb-detail-key">Grand Total</span><span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.grandTotal)}</span></div>}
+              <div className="mb-detail-row"><span className="mb-detail-key">Submitted</span><span className="mb-detail-val">{fmtDate(booking.createdAt)}</span></div>
             </div>
           </div>
           {booking.dressSelections?.length > 0 && (
@@ -346,14 +312,8 @@ const BookingCard = ({ booking, onAcceptPrice, onCancel }) => {
           {booking.selectedDancingPackage && (
             <div className="mb-detail-section">
               <div className="mb-detail-section-title"><Drum size={10}/> Dancing Package</div>
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Package</span>
-                <span className="mb-detail-val">{booking.selectedDancingPackage.name}</span>
-              </div>
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Price</span>
-                <span className="mb-detail-val">Rs. {fmt(booking.selectedDancingPackage.totalPrice)}</span>
-              </div>
+              <div className="mb-detail-row"><span className="mb-detail-key">Package</span><span className="mb-detail-val">{booking.selectedDancingPackage.name}</span></div>
+              <div className="mb-detail-row"><span className="mb-detail-key">Price</span><span className="mb-detail-val">Rs. {fmt(booking.selectedDancingPackage.totalPrice)}</span></div>
             </div>
           )}
           {booking.extraPerformers?.length > 0 && (
@@ -375,7 +335,7 @@ const BookingCard = ({ booking, onAcceptPrice, onCancel }) => {
   );
 };
 
-/* ─── Dancing Package Booking Card ────────────────────── */
+/*  Dancing card  */
 const DancingBookingCard = ({ booking, onAcceptPrice, onCancel }) => {
   const [expanded,setExpanded] = useState(false);
   return (
@@ -393,15 +353,12 @@ const DancingBookingCard = ({ booking, onAcceptPrice, onCancel }) => {
             <span className="mb-card-meta-item"><Phone size={11}/> {booking.contactNo}</span>
           </div>
         </div>
-        <span className={`mb-status ${booking.status||"PENDING"}`}>
-          {STATUS_ICONS[booking.status]||"⏳"} {STATUS_LABELS[booking.status]||"Pending"}
-        </span>
+        <span className={`mb-status ${booking.status||"PENDING"}`}>{STATUS_ICONS[booking.status]||"⏳"} {STATUS_LABELS[booking.status]||"Pending"}</span>
       </div>
       <PricingSection booking={booking} accentColor="var(--indigo)"/>
       <PriceBox booking={booking} onAccept={onAcceptPrice} onCancel={onCancel}/>
       <button className="mb-toggle" onClick={()=>setExpanded(!expanded)}>
-        <span>View Details</span>
-        {expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
+        <span>View Details</span>{expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
       </button>
       {expanded && (
         <div className="mb-details">
@@ -412,31 +369,17 @@ const DancingBookingCard = ({ booking, onAcceptPrice, onCancel }) => {
                 ["Contact",booking.contactNo],["Groom Arrival",booking.groomArrivalTime||"—"],
                 ["Poruwa Start",booking.poruwaStartTime||"—"]
               ].map(([k,v])=>(
-                <div key={k} className="mb-detail-row">
-                  <span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span>
-                </div>
+                <div key={k} className="mb-detail-row"><span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span></div>
               ))}
-              {booking.specialNotes && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Notes</span>
-                  <span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span>
-                </div>
-              )}
+              {booking.specialNotes && <div className="mb-detail-row"><span className="mb-detail-key">Notes</span><span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span></div>}
             </div>
             <div className="mb-detail-section">
-              <div className="mb-detail-section-title"><Drum size={10}/> Package</div>
+              <div className="mb-detail-section-title"><Drum size={10}/> Package Info</div>
               <div className="mb-detail-row"><span className="mb-detail-key">Name</span><span className="mb-detail-val">{booking.dancingPackageName}</span></div>
               <div className="mb-detail-row"><span className="mb-detail-key">Base Price</span><span className="mb-detail-val">Rs. {fmt(booking.dancingPackageBasePrice)}</span></div>
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Subtotal</span>
-                <span className="mb-detail-val" style={{ color:"var(--indigo)",fontWeight:700 }}>Rs. {fmt(booking.bookingSubtotal)}</span>
-              </div>
-              {booking.grandTotal!=null && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Grand Total</span>
-                  <span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.grandTotal)}</span>
-                </div>
-              )}
+              <div className="mb-detail-row"><span className="mb-detail-key">Subtotal</span><span className="mb-detail-val" style={{ color:"var(--indigo)",fontWeight:700 }}>Rs. {fmt(booking.bookingSubtotal)}</span></div>
+              {booking.grandTotal!=null && <div className="mb-detail-row"><span className="mb-detail-key">Grand Total</span><span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.grandTotal)}</span></div>}
+              <div className="mb-detail-row"><span className="mb-detail-key">Submitted</span><span className="mb-detail-val">{fmtDate(booking.createdAt)}</span></div>
             </div>
           </div>
           {booking.extraPerformers?.length > 0 && (
@@ -444,10 +387,7 @@ const DancingBookingCard = ({ booking, onAcceptPrice, onCancel }) => {
               <div className="mb-detail-section-title"><Users size={10}/> Extra Performers</div>
               <div style={{ display:"flex",flexWrap:"wrap",gap:"6px" }}>
                 {booking.extraPerformers.map((ep,i)=>(
-                  <span key={i} className="mb-performer-chip">
-                    {ep.quantity} × {ep.performerTypeName}
-                    <span style={{ opacity:.7 }}>&nbsp;(Rs. {fmt(ep.pricePerUnit*ep.quantity)})</span>
-                  </span>
+                  <span key={i} className="mb-performer-chip">{ep.quantity} × {ep.performerTypeName}<span style={{ opacity:.7 }}>&nbsp;(Rs. {fmt(ep.pricePerUnit*ep.quantity)})</span></span>
                 ))}
               </div>
             </div>
@@ -458,7 +398,7 @@ const DancingBookingCard = ({ booking, onAcceptPrice, onCancel }) => {
   );
 };
 
-/*   NEW: Dress-Only Booking Card  */
+/*  Dress-only card  */
 const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
   const [expanded,setExpanded] = useState(false);
   return (
@@ -476,15 +416,12 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
             <span className="mb-card-meta-item"><Phone size={11}/> {booking.contactNo}</span>
           </div>
         </div>
-        <span className={`mb-status ${booking.status}`}>
-          {STATUS_ICONS[booking.status]} {STATUS_LABELS[booking.status]}
-        </span>
+        <span className={`mb-status ${booking.status}`}>{STATUS_ICONS[booking.status]} {STATUS_LABELS[booking.status]}</span>
       </div>
-
-      {/* Pricing section */}
+      {/* Dress-only pricing */}
       <div className="mb-pricing-section">
         <div className="mb-pricing-title">💰 Pricing Summary</div>
-        {booking.dressSelections?.map((s,i) => s.lineTotal > 0 && (
+        {booking.dressSelections?.filter(s=>s.lineTotal>0).map((s,i)=>(
           <div key={i} className="mb-pricing-line">
             <span className="mb-pricing-line-k">{s.role.replace("_"," ")} — {s.dressItemName} ×{s.quantity}</span>
             <span className="mb-pricing-line-v">Rs. {fmt(s.lineTotal)}</span>
@@ -499,9 +436,7 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
             <Truck size={12}/> Transport Price
             {booking.status==="PENDING" && <span style={{ color:"var(--subtle)",fontSize:".70rem" }}>&nbsp;(to be set)</span>}
           </span>
-          <span className="mb-pricing-transport-v">
-            {booking.transportPrice!=null ? `Rs. ${fmt(booking.transportPrice)}` : "—"}
-          </span>
+          <span className="mb-pricing-transport-v">{booking.transportPrice!=null?`Rs. ${fmt(booking.transportPrice)}`:"—"}</span>
         </div>
         {booking.grandTotal!=null && (
           <div className="mb-pricing-grand">
@@ -510,12 +445,9 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
           </div>
         )}
       </div>
-
       <PriceBox booking={booking} onAccept={onAcceptPrice} onCancel={onCancel}/>
-
       <button className="mb-toggle" onClick={()=>setExpanded(!expanded)}>
-        <span>View Details</span>
-        {expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
+        <span>View Details</span>{expanded?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
       </button>
       {expanded && (
         <div className="mb-details">
@@ -526,33 +458,15 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
                 ["Contact",booking.contactNo],["Groom Arrival",booking.groomArrivalTime||"—"],
                 ["Poruwa Start",booking.poruwaStartTime||"—"]
               ].map(([k,v])=>(
-                <div key={k} className="mb-detail-row">
-                  <span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span>
-                </div>
+                <div key={k} className="mb-detail-row"><span className="mb-detail-key">{k}</span><span className="mb-detail-val">{v}</span></div>
               ))}
-              {booking.specialNotes && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Notes</span>
-                  <span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span>
-                </div>
-              )}
+              {booking.specialNotes && <div className="mb-detail-row"><span className="mb-detail-key">Notes</span><span className="mb-detail-val" style={{ maxWidth:"180px" }}>{booking.specialNotes}</span></div>}
             </div>
             <div className="mb-detail-section">
               <div className="mb-detail-section-title">💰 Pricing</div>
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Dress Subtotal</span>
-                <span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.bookingSubtotal)}</span>
-              </div>
-              {booking.grandTotal!=null && (
-                <div className="mb-detail-row">
-                  <span className="mb-detail-key">Grand Total</span>
-                  <span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.grandTotal)}</span>
-                </div>
-              )}
-              <div className="mb-detail-row">
-                <span className="mb-detail-key">Submitted</span>
-                <span className="mb-detail-val">{fmtDate(booking.createdAt)}</span>
-              </div>
+              <div className="mb-detail-row"><span className="mb-detail-key">Dress Subtotal</span><span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.bookingSubtotal)}</span></div>
+              {booking.grandTotal!=null && <div className="mb-detail-row"><span className="mb-detail-key">Grand Total</span><span className="mb-detail-val" style={{ color:"var(--crimson)",fontWeight:700 }}>Rs. {fmt(booking.grandTotal)}</span></div>}
+              <div className="mb-detail-row"><span className="mb-detail-key">Submitted</span><span className="mb-detail-val">{fmtDate(booking.createdAt)}</span></div>
             </div>
           </div>
           {booking.dressSelections?.length > 0 && (
@@ -564,8 +478,8 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
                     {ds.role==="GROOM"?<Crown size={9}/>:ds.role==="BEST_MAN"?<Users size={9}/>:<User size={9}/>}
                     {ds.role.replace("_"," ")} — {ds.dressItemName}
                     <span style={{ opacity:.7 }}>&nbsp;({ds.categoryName})</span>
-                    <span style={{ fontWeight:700 }}>&nbsp;×{ds.quantity}</span>
-                    {ds.lineTotal>0 && <span style={{ opacity:.8 }}>&nbsp;= Rs.{fmt(ds.lineTotal)}</span>}
+                    &nbsp;×{ds.quantity}
+                    {ds.lineTotal>0 && <span style={{ fontWeight:700 }}>&nbsp;= Rs.{fmt(ds.lineTotal)}</span>}
                   </span>
                 ))}
               </div>
@@ -577,15 +491,21 @@ const DressOnlyCard = ({ booking, onAcceptPrice, onCancel }) => {
   );
 };
 
+/* 
+   MAIN COMPONENT
+ */
 const MyBookings = () => {
-  const [bookings,       setBookings]       = useState([]);
-  const [dancingBookings,setDancingBookings] = useState([]);
-  const [dressOnlyBookings,setDressOnlyBookings] = useState([]);  // ← NEW
-  const [bookingType,    setBookingType]    = useState("special");
-  const [loading,        setLoading]        = useState(true);
-  const [activeTab,      setActiveTab]      = useState("ALL");
+  const { userRole } = useAuth();
+  const navigate     = useNavigate();
 
-  /* ── Inject CSS (fixes footer flash on navigation) ── */
+  const [bookings,         setBookings]         = useState([]);
+  const [dancingBookings,  setDancingBookings]  = useState([]);
+  const [dressOnlyBookings,setDressOnlyBookings]= useState([]);
+  const [bookingType, setBookingType]  = useState("special");
+  const [loading,     setLoading]      = useState(true);
+  const [activeTab,   setActiveTab]    = useState("ALL");
+
+  /*  CSS injection (fixes footer flash)  */
   useEffect(() => {
     const tag = document.createElement("style");
     tag.setAttribute("data-page","my-bookings");
@@ -594,69 +514,71 @@ const MyBookings = () => {
     return () => { if (document.head.contains(tag)) document.head.removeChild(tag); };
   }, []);
 
+  /*  ADMIN GUARD — stop here before making any API calls  */
+  const isAdmin = userRole === "ADMIN";
+
   const fetchBookings        = async () => { try { const r=await api.get("/api/bookings/special-packages"); setBookings(r.data||[]); } catch { toastError("Failed to load special package bookings."); } };
   const fetchDancingBookings = async () => { try { const r=await api.get("/api/bookings/dancing-packages"); setDancingBookings(r.data||[]); } catch { toastError("Failed to load dancing package bookings."); } };
-  const fetchDressOnlyBookings = async () => { try { const r=await api.get("/api/bookings/dress-only"); setDressOnlyBookings(r.data||[]); } catch { toastError("Failed to load dress-only bookings."); } };
+  const fetchDressOnlyBookings = async () => { try { const r=await api.get("/api/bookings/dress-only"); setDressOnlyBookings(r.data||[]); } catch { /* silently ignore — table may not exist yet */ } };
 
   const refreshAll = () => {
+    if (isAdmin) return;  // ← guard: admin has no customer bookings
     setLoading(true);
-    Promise.all([fetchBookings(),fetchDancingBookings(),fetchDressOnlyBookings()])
-      .finally(()=>setLoading(false));
+    Promise.all([fetchBookings(), fetchDancingBookings(), fetchDressOnlyBookings()])
+      .finally(() => setLoading(false));
   };
-  useEffect(()=>{ refreshAll(); },[]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!isAdmin) refreshAll();
+    else          setLoading(false);
+  }, [isAdmin]); // eslint-disable-line
 
   const currentBookings = bookingType==="special" ? bookings
     : bookingType==="dancing" ? dancingBookings : dressOnlyBookings;
-
-  const filtered = activeTab==="ALL" ? currentBookings
-    : currentBookings.filter(b=>b.status===activeTab);
+  const filtered = activeTab==="ALL" ? currentBookings : currentBookings.filter(b=>b.status===activeTab);
   const count = (s) => s==="ALL" ? currentBookings.length : currentBookings.filter(b=>b.status===s).length;
 
-  /* ── Special actions ── */
+  /*  Actions — special  */
   const handleAcceptPrice = async (requestId) => {
-    const r=await MySwal.fire({ title:"Accept Transport Price?",text:"Once accepted, admin will proceed to approve.",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
+    const r = await MySwal.fire({ title:"Accept Transport Price?",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/special-packages/${requestId}/accept-price`); toastSuccess("Price accepted!"); fetchBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
   const handleCancel = async (requestId) => {
-    const r=await MySwal.fire({ title:"Cancel Booking?",text:"This action cannot be undone.",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
+    const r = await MySwal.fire({ title:"Cancel Booking?",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/special-packages/${requestId}/cancel`); toastSuccess("Booking cancelled."); fetchBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
 
-  /* ── Dancing actions ── */
+  /*  Actions — dancing  */
   const handleDancingAcceptPrice = async (requestId) => {
-    const r=await MySwal.fire({ title:"Accept Transport Price?",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
+    const r = await MySwal.fire({ title:"Accept Transport Price?",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/dancing-packages/${requestId}/accept-price`); toastSuccess("Price accepted!"); fetchDancingBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
   const handleDancingCancel = async (requestId) => {
-    const r=await MySwal.fire({ title:"Cancel Booking?",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
+    const r = await MySwal.fire({ title:"Cancel Booking?",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/dancing-packages/${requestId}/cancel`); toastSuccess("Booking cancelled."); fetchDancingBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
 
-  /* ── Dress-only actions ── */
+  /*  Actions — dress-only  */
   const handleDressOnlyAcceptPrice = async (requestId) => {
-    const r=await MySwal.fire({ title:"Accept Transport Price?",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
+    const r = await MySwal.fire({ title:"Accept Transport Price?",icon:"question",showCancelButton:true,confirmButtonColor:"#15803D",confirmButtonText:"Yes, Accept" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/dress-only/${requestId}/accept-price`); toastSuccess("Price accepted!"); fetchDressOnlyBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
   const handleDressOnlyCancel = async (requestId) => {
-    const r=await MySwal.fire({ title:"Cancel Booking?",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
+    const r = await MySwal.fire({ title:"Cancel Booking?",icon:"warning",showCancelButton:true,confirmButtonColor:"#8B1A1A",confirmButtonText:"Yes, Cancel" });
     if(!r.isConfirmed) return;
     try { await api.put(`/api/bookings/dress-only/${requestId}/cancel`); toastSuccess("Booking cancelled."); fetchDressOnlyBookings(); }
     catch(e){ toastError(e.response?.data?.message||"Failed."); }
   };
-
-  const newBookingLink = bookingType==="special" ? "/booking/special-packages"
-    : bookingType==="dancing" ? "/booking/dancing-packages" : "/booking/dress-only";
-  const newBookingClass = bookingType==="dancing" ? "indigo" : bookingType==="dress" ? "gold" : "";
 
   return (
     <div className="mb-root">
@@ -667,76 +589,95 @@ const MyBookings = () => {
       </section>
 
       <div className="mb-body">
-        {/* Toolbar */}
-        <div className="mb-toolbar">
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.4rem",fontWeight:700,color:"var(--text)" }}>
-            {currentBookings.length} Booking{currentBookings.length!==1?"s":""}
-          </h2>
-          <div style={{ display:"flex",gap:"10px",alignItems:"center" }}>
-            <button onClick={refreshAll}
-              style={{ padding:"9px",border:"1px solid var(--border)",borderRadius:"7px",
-                background:"transparent",cursor:"pointer",color:"var(--muted)",display:"flex",alignItems:"center" }}>
-              <RefreshCw size={14}/>
-            </button>
-            <Link to={newBookingLink} className={`mb-new-btn ${newBookingClass}`}>
-              <Plus size={14}/> New Booking
-            </Link>
-          </div>
-        </div>
 
-        {/* ── Type Switcher (3 tabs now) ── */}
-        <div className="mb-type-switch">
-          <button className={`mb-type-btn special ${bookingType==="special"?"active":""}`}
-            onClick={()=>{ setBookingType("special"); setActiveTab("ALL"); }}>
-          Booking Special Packages {bookings.length>0 && `(${bookings.length})`}
-          </button>
-          <button className={`mb-type-btn dancing ${bookingType==="dancing"?"active":""}`}
-            onClick={()=>{ setBookingType("dancing"); setActiveTab("ALL"); }}>
-          Booking Dancing Packages {dancingBookings.length>0 && `(${dancingBookings.length})`}
-          </button>
-          <button className={`mb-type-btn dress ${bookingType==="dress"?"active":""}`}
-            onClick={()=>{ setBookingType("dress"); setActiveTab("ALL"); }}>
-          Booking Dress Only {dressOnlyBookings.length>0 && `(${dressOnlyBookings.length})`}
-          </button>
-        </div>
-
-        {/* Status tabs */}
-        <div className="mb-tabs">
-          {ALL_STATUSES.map(s=>(
-            <button key={s} className={`mb-tab ${s==="ALL"?"all":s}${activeTab===s?" active":""}`}
-              onClick={()=>setActiveTab(s)}>
-              {s==="ALL"?"All":STATUS_LABELS[s]} ({count(s)})
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        {loading ? (
-          <div className="mb-spinner"/>
-        ) : filtered.length===0 ? (
-          <div className="mb-empty">
-            <div className="mb-empty-icon">
-              {bookingType==="special"?<Sparkles size={28}/>:bookingType==="dancing"?<Drum size={28}/>:<Shirt size={28}/>}
-            </div>
-            <p className="mb-empty-title">No Bookings Found</p>
-            <p className="mb-empty-text">
-              {bookingType==="special" ? "You have no special package bookings yet."
-               :bookingType==="dancing" ? "You have no dancing package bookings yet."
-               :"You have no dress-only bookings yet."}
+        {/*  ADMIN NOTICE — shown instead of broken booking lists  */}
+        {isAdmin ? (
+          <div className="mb-admin-notice">
+            <div className="mb-admin-notice-icon"><ShieldAlert size={28}/></div>
+            <p className="mb-admin-notice-title">Admin Account</p>
+            <p className="mb-admin-notice-text">
+              This page is for <strong>customer accounts</strong> to track their booking requests.
+              As an admin, you can view and manage <em>all</em> bookings from the admin dashboard.
             </p>
-            <Link to={newBookingLink} className={`mb-new-btn ${newBookingClass}`}>
-              <Plus size={14}/> Book Now
+            <Link to="/admin/booking-requests" className="mb-admin-notice-link">
+              Go to Admin Bookings
             </Link>
           </div>
-        ) : bookingType==="special" ? (
-          filtered.map(b=><BookingCard key={b.requestId} booking={b}
-            onAcceptPrice={handleAcceptPrice} onCancel={handleCancel}/>)
-        ) : bookingType==="dancing" ? (
-          filtered.map(b=><DancingBookingCard key={b.requestId} booking={b}
-            onAcceptPrice={handleDancingAcceptPrice} onCancel={handleDancingCancel}/>)
         ) : (
-          filtered.map(b=><DressOnlyCard key={b.requestId} booking={b}
-            onAcceptPrice={handleDressOnlyAcceptPrice} onCancel={handleDressOnlyCancel}/>)
+          <>
+            {/* Toolbar */}
+            <div className="mb-toolbar">
+              <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.4rem",fontWeight:700,color:"var(--text)" }}>
+                {currentBookings.length} Booking{currentBookings.length!==1?"s":""}
+              </h2>
+              <div style={{ display:"flex",gap:"10px",alignItems:"center" }}>
+                <button onClick={refreshAll}
+                  style={{ padding:"9px",border:"1px solid var(--border)",borderRadius:"7px",
+                    background:"transparent",cursor:"pointer",color:"var(--muted)",display:"flex",alignItems:"center" }}>
+                  <RefreshCw size={14}/>
+                </button>
+                <Link to={bookingType==="special"?"/booking/special-packages":bookingType==="dancing"?"/booking/dancing-packages":"/booking/dress-only"}
+                  className={`mb-new-btn${bookingType==="dancing"?" indigo":bookingType==="dress"?" gold":""}`}>
+                  <Plus size={14}/> New Booking
+                </Link>
+              </div>
+            </div>
+
+            {/* Type switcher */}
+            <div className="mb-type-switch">
+              <button className={`mb-type-btn special ${bookingType==="special"?"active":""}`}
+                onClick={()=>{ setBookingType("special"); setActiveTab("ALL"); }}>
+                 Special Packages {bookings.length>0&&`(${bookings.length})`}
+              </button>
+              <button className={`mb-type-btn dancing ${bookingType==="dancing"?"active":""}`}
+                onClick={()=>{ setBookingType("dancing"); setActiveTab("ALL"); }}>
+                Dancing Packages {dancingBookings.length>0&&`(${dancingBookings.length})`}
+              </button>
+              <button className={`mb-type-btn dress ${bookingType==="dress"?"active":""}`}
+                onClick={()=>{ setBookingType("dress"); setActiveTab("ALL"); }}>
+                Dress Only {dressOnlyBookings.length>0&&`(${dressOnlyBookings.length})`}
+              </button>
+            </div>
+
+            {/* Status tabs */}
+            <div className="mb-tabs">
+              {ALL_STATUSES.map(s=>(
+                <button key={s} className={`mb-tab ${s==="ALL"?"all":s}${activeTab===s?" active":""}`}
+                  onClick={()=>setActiveTab(s)}>
+                  {s==="ALL"?"All":STATUS_LABELS[s]} ({count(s)})
+                </button>
+              ))}
+            </div>
+
+            {/* Cards */}
+            {loading ? <div className="mb-spinner"/> :
+             filtered.length===0 ? (
+              <div className="mb-empty">
+                <div className="mb-empty-icon">
+                  {bookingType==="special"?<Sparkles size={28}/>:bookingType==="dancing"?<Drum size={28}/>:<Shirt size={28}/>}
+                </div>
+                <p className="mb-empty-title">No Bookings Found</p>
+                <p className="mb-empty-text">
+                  {bookingType==="special"?"You have no special package bookings yet."
+                  :bookingType==="dancing"?"You have no dancing package bookings yet."
+                  :"You have no dress-only bookings yet."}
+                </p>
+                <Link to={bookingType==="special"?"/booking/special-packages":bookingType==="dancing"?"/booking/dancing-packages":"/booking/dress-only"}
+                  className={`mb-new-btn${bookingType==="dancing"?" indigo":bookingType==="dress"?" gold":""}`}>
+                  <Plus size={14}/> Book Now
+                </Link>
+              </div>
+             ) : bookingType==="special" ? (
+               filtered.map(b=><BookingCard key={b.requestId} booking={b}
+                 onAcceptPrice={handleAcceptPrice} onCancel={handleCancel}/>)
+             ) : bookingType==="dancing" ? (
+               filtered.map(b=><DancingBookingCard key={b.requestId} booking={b}
+                 onAcceptPrice={handleDancingAcceptPrice} onCancel={handleDancingCancel}/>)
+             ) : (
+               filtered.map(b=><DressOnlyCard key={b.requestId} booking={b}
+                 onAcceptPrice={handleDressOnlyAcceptPrice} onCancel={handleDressOnlyCancel}/>)
+             )}
+          </>
         )}
       </div>
     </div>
@@ -744,3 +685,5 @@ const MyBookings = () => {
 };
 
 export default MyBookings;
+
+

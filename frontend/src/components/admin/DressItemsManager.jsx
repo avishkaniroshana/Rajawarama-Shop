@@ -72,6 +72,20 @@ const DressItemsManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const resolveImageUrl = (path) => {
+    if (!path) return null;
+    if (
+      path.startsWith("http://") ||
+      path.startsWith("https://") ||
+      path.startsWith("data:") ||
+      path.startsWith("blob:")
+    ) {
+      return path;
+    }
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${api.defaults.baseURL ?? ""}${normalizedPath}`;
+  };
+
   useEffect(() => {
     fetchItems();
     fetchCategories();
@@ -106,7 +120,7 @@ const DressItemsManager = () => {
         quantityPageBoys: item.quantityPageBoys || "",
         categoryId: item.categoryId || "",
       });
-      setImagePreview(item.imagePath || null);
+      setImagePreview(resolveImageUrl(item.imagePath));
     } else {
       setEditingItem(null);
       setFormData({
@@ -459,11 +473,7 @@ const DressItemsManager = () => {
                     >
                       {item.imagePath ? (
                         <img
-                          src={
-                            item.imagePath.startsWith("http")
-                              ? item.imagePath
-                              : `${api.defaults.baseURL ?? ""}${item.imagePath}`
-                          }
+                          src={resolveImageUrl(item.imagePath)}
                           alt={item.dressItemName}
                           style={{
                             width: 48,

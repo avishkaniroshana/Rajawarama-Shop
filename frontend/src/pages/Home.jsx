@@ -316,7 +316,7 @@ const Home = () => {
             </div>
             <h1 className="hm-hero-title">
               W E L C O M E <br />
-              <h3 className="hm-hero-subtitle">to </h3>
+              <span className="hm-hero-subtitle">to </span>
               <em className="shop-name">Rajawarama</em>
             </h1>
             <p className="hm-hero-sub">

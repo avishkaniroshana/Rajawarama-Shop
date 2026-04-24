@@ -145,7 +145,7 @@ public class DressItemService {
                 .quantityPageBoys(item.getQuantityPageBoys())
                 .imagePath(
                         item.getImagePath() != null
-                                ? "http://localhost:8080/api/images/" + item.getImagePath()   // ← absolute for dev
+                                ? "/api/images/" + item.getImagePath()   // ← absolute for dev
                                 : null
                 )
                 .categoryId(item.getCategory().getCategoryId())

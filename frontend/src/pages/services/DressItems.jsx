@@ -125,6 +125,9 @@ const DressCard = ({ item }) => {
 
   // ✅ FIX: was item.imageUrl — API returns item.imagePath (same field used in admin DressItemsManager)
   const hasImage = !!item.imagePath;
+  const imageSrc = hasImage
+    ? `${api.defaults.baseURL ?? ""}${item.imagePath}`
+    : null;
 
   const prices = [
     item.categoryGroomDressPrice && {
@@ -148,7 +151,7 @@ const DressCard = ({ item }) => {
         {hasImage ? (
           // ✅ FIX: was item.imageUrl
           <img
-            src={item.imagePath}
+            src={imageSrc}
             alt={item.dressItemName}
             className="di-img"
             onError={(e) => {
